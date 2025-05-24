@@ -75,7 +75,6 @@ export default class ImageEditor {
         return;
       }
       if (currentSrc) {
-        debugger;
         this.insertImage(currentSrc);
         this._closeDialog(dialog);
       }
@@ -86,29 +85,38 @@ export default class ImageEditor {
    * 设置拖拽上传行为
    */
   private _setupDragDrop(dialog: HTMLDivElement): void {
+    // 保存选区
+    this.editor.saveSelection();
+    debugger;
     const uploadArea = dialog.querySelector(".upload-area") as HTMLDivElement;
     const fileInput = dialog.querySelector(".file-input") as HTMLInputElement;
     const previewImg = dialog.querySelector(".preview") as HTMLImageElement;
     // 点击触发隐藏的 input
-    uploadArea.querySelector(".browse")?.addEventListener("click", () => {
+    uploadArea.querySelector(".browse")?.addEventListener("click", (e) => {
+      e.preventDefault();
       fileInput.click();
     });
-    // 处理文件选择/拖拽
-    const handleFile = (file: File) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        previewImg.src = result;
-        previewImg.style.display = "block";
-        // 弹出裁剪窗口
-        this.showCropDialog(result);
-      };
-      reader.onerror = () => {
-        alert("文件读取失败");
-      };
-      reader.readAsDataURL(file);
-    };
+    // 修改后的 handleFile 方法（支持 Promise）
+    const handleFile = (file: File): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
 
+        reader.onload = () => {
+          const result = reader.result as string;
+          previewImg.src = result;
+          previewImg.style.display = "block";
+          this.showCropDialog(result);
+          resolve(); // 读取成功时解析
+        };
+
+        reader.onerror = () => {
+          alert("文件读取失败");
+          reject(reader.error); // 读取失败时拒绝
+        };
+
+        reader.readAsDataURL(file);
+      });
+    };
     // 拖拽上传
     uploadArea.addEventListener("dragover", (e) => {
       e.preventDefault();
@@ -129,9 +137,14 @@ export default class ImageEditor {
     });
 
     // 点击上传
-    fileInput.addEventListener("change", () => {
-      if (fileInput.files && fileInput.files.length > 0) {
-        handleFile(fileInput.files[0]);
+    fileInput.addEventListener("change", async (e) => {
+      e.preventDefault();
+      if (fileInput.files?.length) {
+        try {
+          await handleFile(fileInput.files[0]);
+        } catch (error) {
+          console.error("文件处理失败:", error);
+        }
       }
     });
   }
@@ -201,32 +214,31 @@ export default class ImageEditor {
    * 插入图片到编辑器内容中
    */
   private insertImage(src: string): void {
+    // 恢复选区
+    this.editor.restoreSelection(true)
     const img = document.createElement("img");
     img.src = src;
     img.classList.add("editable-image");
     img.setAttribute("contenteditable", "false");
     img.style.maxWidth = "100%";
     img.style.height = "auto";
-
     const editorContent =
       this.editor.container?.querySelector(".editor-content");
     if (!editorContent) {
       console.error("无法找到 .editor-content 元素");
       return;
     }
-
     // 确保编辑区域有焦点
     editorContent.focus();
-
     // 获取当前选区
     const selection = window.getSelection();
+    debugger;
     const range = selection?.getRangeAt(0);
-
     // 判断是否在表格单元格中
     const parentCell = range?.startContainer.parentElement?.closest("td, th");
     if (parentCell) {
-      // 插入到单元格中
       debugger;
+      // 插入到单元格中
       parentCell.appendChild(img);
     } else if (range) {
       // 原有插入逻辑

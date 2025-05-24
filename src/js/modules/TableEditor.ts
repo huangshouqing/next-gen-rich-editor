@@ -20,6 +20,7 @@ export default class TableEditor implements EditorDialog {
    * 打开网格选择器弹窗
    */
   public openGridSelector(): void {
+    this.editor.saveSelection();
     const _this = this;
     const selector = document.createElement("div");
     selector.className = "table-grid-selector";
@@ -163,11 +164,6 @@ export default class TableEditor implements EditorDialog {
    */
   public insertTable(rows: number, cols: number): void {
     const table = document.createElement("table");
-    // 新增失焦监听
-    table.addEventListener("focusout", (e) => {
-      this._clearCellSelection(table);
-    });
-
     for (let i = 0; i < rows; i++) {
       const tr = table.insertRow();
       for (let j = 0; j < cols; j++) {
@@ -175,24 +171,19 @@ export default class TableEditor implements EditorDialog {
         td.innerHTML = "&nbsp;";
       }
     }
-
     const editorContent =
       this.editor.container?.querySelector(".editor-content");
-
     if (!editorContent) {
       console.error("无法找到 .editor-content 元素");
       return;
     }
-
     // 确保编辑区域有焦点
     editorContent.focus();
-
+    this.editor.restoreSelection();
     // 创建 Range 并插入表格
     const selection = window.getSelection();
     const range = selection?.getRangeAt(0);
-
     if (range) {
-      range.deleteContents(); // 清除选区内容
       const parser = new DOMParser();
       const doc = parser.parseFromString(table.outerHTML, "text/html");
       const parsedTable = doc.body.firstChild as HTMLElement;
@@ -200,7 +191,10 @@ export default class TableEditor implements EditorDialog {
     } else {
       editorContent.appendChild(table); // 默认追加到最后
     }
-    // this.initTableCellSelection(table); // 绑定拖拽选择功能
+    // 新增失焦监听清空选中 cell 效果
+    table.addEventListener("focusout", (e) => {
+      this._clearCellSelection(table);
+    });
   }
 
   /**

@@ -18,6 +18,8 @@ export default class EditorCore {
 
   // 使用 Record 明确模块属性结构（也可根据模块数量使用联合类型）
   private moduleInstances: Record<string, EditorModuleInstance> = {};
+  public savedRange: any;
+  public selection: any;
 
   constructor(selector: string, config: { modules: EditorModule[] }) {
     this.selector = selector;
@@ -230,5 +232,32 @@ export default class EditorCore {
 
     parentContainer.appendChild(container);
     this._bindEvents();
+  }
+
+  public restoreSelection(
+    options: {
+      forceFocus?: boolean;
+    } = {}
+  ): void {
+    if (!this.savedRange) return;
+    // 验证选区有效性
+    if (!this.savedRange.startContainer.isConnected) {
+      this.savedRange = null;
+      return;
+    }
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(this.savedRange.cloneRange());
+    if (options.forceFocus) {
+      const editorContent = this.container?.querySelector(".editor-content");
+      editorContent?.focus();
+    }
+  }
+  public saveSelection(): void {
+    this.selection = window.getSelection();
+    this.savedRange =
+      this.selection?.rangeCount > 0
+        ? this.selection.getRangeAt(0).cloneRange()
+        : null;
   }
 }
