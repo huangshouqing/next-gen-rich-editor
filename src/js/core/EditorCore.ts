@@ -56,7 +56,8 @@ export default class EditorCore {
         const cmd = (btn as HTMLElement).dataset.cmd;
         let value: string | null = null;
         if (cmd === "insertTable" && this.TableEditor) {
-          this.moduleInstances["TableEditor"]?.openDialog?.();
+          this.moduleInstances["TableEditor"]?.openGridSelector?.();
+          this.moduleInstances["TableEditor"]?.initRightClickMenu?.();
           return;
         }
         // 处理带值的命令
@@ -71,7 +72,7 @@ export default class EditorCore {
           if (!value) return;
         } else if (cmd === "insertImage") {
           this.moduleInstances["ImageEditor"].openDialog(); // 假设你已注入 ImageEditor 实例
-          this.moduleInstances['ImageEditor'].init(); // 启用图片点击交互功能
+          this.moduleInstances["ImageEditor"].init(); // 启用图片点击交互功能
         }
 
         if (cmd) {
@@ -182,7 +183,7 @@ export default class EditorCore {
     </button>
   
     <!-- 插入 -->
-    <button class="btn" data-cmd="insertTable">
+    <button class="btn" data-cmd="insertTable" id="insert-table-btn">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="4" y="4" width="16" height="16" rx="2"></rect>
         <line x1="4" y1="12" x2="20" y2="12"></line>
@@ -229,65 +230,5 @@ export default class EditorCore {
 
     parentContainer.appendChild(container);
     this._bindEvents();
-  }
-
-  private initImageEvents(editorContent: Element): void {
-    editorContent.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === "IMG") {
-        this.showImageToolbar(target);
-      }
-    });
-  }
-  private showImageToolbar(img: HTMLImageElement): void {
-    const toolbar = document.createElement("div");
-    toolbar.className = "image-toolbar";
-    toolbar.innerHTML = `
-      <button class="align-btn" data-align="left">左对齐</button>
-      <button class="align-btn" data-align="center">居中</button>
-      <button class="align-btn" data-align="right">右对齐</button>
-      <button class="delete-btn">删除</button>
-    `;
-
-    // 设置位置
-    const rect = img.getBoundingClientRect();
-    toolbar.style.position = "absolute";
-    toolbar.style.top = `${rect.bottom + window.scrollY}px`;
-    toolbar.style.left = `${rect.left + window.scrollX}px`;
-    toolbar.style.zIndex = "9999";
-    toolbar.style.background = "#fff";
-    toolbar.style.border = "1px solid #ccc";
-    toolbar.style.padding = "4px";
-    toolbar.style.borderRadius = "4px";
-
-    document.body.appendChild(toolbar);
-
-    // 对齐事件绑定
-    toolbar.querySelectorAll(".align-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const align = btn.getAttribute("data-align");
-        switch (align) {
-          case "left":
-            img.style.float = "left";
-            img.style.marginRight = "10px";
-            break;
-          case "center":
-            img.style.display = "block";
-            img.style.margin = "10px auto";
-            break;
-          case "right":
-            img.style.float = "right";
-            img.style.marginLeft = "10px";
-            break;
-        }
-        toolbar.remove();
-      });
-    });
-
-    // 删除按钮
-    toolbar.querySelector(".delete-btn")?.addEventListener("click", () => {
-      img.remove();
-      toolbar.remove();
-    });
   }
 }

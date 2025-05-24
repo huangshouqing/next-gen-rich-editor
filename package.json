@@ -22,6 +22,7 @@
     "vite-plugin-css": "^1.0.4"
   },
   "dependencies": {
-    "cropperjs": "^1.6.2"
+    "cropperjs": "^1.6.2",
+    "rangy": "^1.3.2"
   }
 }

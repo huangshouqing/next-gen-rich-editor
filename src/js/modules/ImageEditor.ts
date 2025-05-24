@@ -21,7 +21,7 @@ export default class ImageEditor {
     dialog.className = "editor-dialog image-editor-dialog";
     dialog.innerHTML = `
       <div class="dialog-header">
-        <h4>插入图片</h4>
+        <span>插入图片</span>
         <button class="close-btn">×</button>
       </div>
       <div class="dialog-body">
@@ -140,7 +140,7 @@ export default class ImageEditor {
     cropDialog.className = "editor-dialog image-crop-dialog";
     cropDialog.innerHTML = `
       <div class="dialog-header">
-        <h4>裁剪图片</h4>
+        <span>裁剪图片</span>
         <button class="close-btn">×</button>
       </div>
       <div class="dialog-body">
@@ -204,28 +204,46 @@ export default class ImageEditor {
     const img = document.createElement("img");
     img.src = src;
     img.classList.add("editable-image");
-    img.setAttribute("contenteditable", "false"); // 防止图片被编辑
+    img.setAttribute("contenteditable", "false");
     img.style.maxWidth = "100%";
     img.style.height = "auto";
-    // 获取当前编辑区域
+
     const editorContent =
       this.editor.container?.querySelector(".editor-content");
-    if (editorContent) {
-      // 确保编辑区域有焦点
-      editorContent.focus();
-      // 创建 Range 并插入图片
-      const selection = window.getSelection();
-      const range = selection?.getRangeAt(0);
-
-      if (range) {
-        range.deleteContents(); // 清除选区内容
-        range.insertNode(img); // 插入图片
-      } else {
-        editorContent.appendChild(img); // 默认追加到最后
-      }
-    } else {
+    if (!editorContent) {
       console.error("无法找到 .editor-content 元素");
+      return;
     }
+
+    // 确保编辑区域有焦点
+    editorContent.focus();
+
+    // 获取当前选区
+    const selection = window.getSelection();
+    const range = selection?.getRangeAt(0);
+
+    // 判断是否在表格单元格中
+    const parentCell = range?.startContainer.parentElement?.closest("td, th");
+    if (parentCell) {
+      // 插入到单元格中
+      debugger;
+      parentCell.appendChild(img);
+    } else if (range) {
+      // 原有插入逻辑
+      range.deleteContents();
+      range.insertNode(img);
+    } else {
+      editorContent.appendChild(img);
+    }
+
+    // 插入后恢复焦点
+    setTimeout(() => {
+      const editorContent =
+        this.editor.container?.querySelector(".editor-content");
+      if (editorContent) {
+        editorContent.focus();
+      }
+    }, 0);
   }
   /**
    * 初始化图片点击事件监听
