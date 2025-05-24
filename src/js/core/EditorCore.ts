@@ -9,6 +9,12 @@ interface EditorModuleInstance {
   name: string;
   // 可选：添加通用方法或属性
 }
+// 导入样式
+import "@/css/base.css";
+import "@/css/dialog.css";
+import "@/css/toolbar.css";
+// 在文件顶部添加
+import HtmlToMarkdown from "@/js/modules/HtmlToMarkdown";
 
 export default class EditorCore {
   private selector: string;
@@ -23,6 +29,7 @@ export default class EditorCore {
   private history: string[] = [];
   private historyPointer: number = -1;
   private isProcessing: boolean = false;
+  private htmlToMarkdownConverter: HtmlToMarkdown = new HtmlToMarkdown();
 
   constructor(selector: string, config: { modules: EditorModule[] }) {
     this.selector = selector;
@@ -143,6 +150,53 @@ export default class EditorCore {
           e.preventDefault();
           this.redo();
           return;
+        }
+        // 处理特殊命令
+        switch (cmd) {
+          case "clear":
+            e.preventDefault();
+            if (confirm("确定要清空内容吗？")) {
+              this.clearContent();
+            }
+            break;
+
+          case "insertSample":
+            e.preventDefault();
+            this.setContent(`
+            <h2>欢迎使用富文本编辑器</h2>
+            <p>这是一个示例文本，演示如何通过 API 设置和获取编辑器内容。</p>
+            <ul>
+              <li>支持列表</li>
+              <li>支持表格</li>
+              <li>支持图片</li>
+            </ul>
+          `);
+            break;
+          case "toMarkdown":
+            e.preventDefault();
+            const markdown = this.getMarkdown();
+
+            // 显示结果弹窗
+            const previewWindow = window.open("", "_blank");
+            if (previewWindow) {
+              previewWindow.document.write(`
+                  <html>
+                    <head>
+                      <title>Markdown Preview</title>
+                      <style>
+                        body { 
+                          font-family: monospace;
+                          white-space: pre-wrap;
+                          padding: 20px;
+                          background: #f8f9fa;
+                        }
+                      </style>
+                    </head>
+                    <body>${markdown}</body>
+                  </html>
+                `);
+            }
+            break;
         }
         if (cmd) {
           this.execCommand(cmd, value);
@@ -325,6 +379,34 @@ export default class EditorCore {
     <path d="M3 7a9 9 0 0 1 9 9 9 9 0 0 1-6-15"></path>
   </svg>
 </button>
+
+<!-- 内容操作 -->
+<button class="btn" data-cmd="clear" title="清空">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 6h18"></path>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+    <line x1="4" y1="6" x2="4" y2="6"></line>
+    <line x1="20" y1="6" x2="20" y2="6"></line>
+  </svg>
+</button>
+
+<button class="btn" data-cmd="insertSample" title="插入示例文本">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+    <line x1="7" y1="7" x2="17" y2="7"></line>
+    <line x1="7" y1="12" x2="17" y2="12"></line>
+    <line x1="7" y1="17" x2="12" y2="17"></line>
+  </svg>
+</button>
+
+<button class="btn" data-cmd="toMarkdown" title="转换为 Markdown">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 8v11c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h10l5 5z"></path>
+    <line x1="12" y1="12" x2="12" y2="18"></line>
+    <polyline points="9 15 12 12 15 15"></polyline>
+  </svg>
+</button>
+
   `;
 
     // 创建可编辑区域
@@ -443,5 +525,161 @@ export default class EditorCore {
     // 恢复选区
     this.restoreSelection({ forceFocus: true });
     this.isProcessing = false;
+  }
+
+  /**
+   * 获取编辑器当前内容（HTML）
+   */
+  public getContent(): string {
+    if (!this.container) return "";
+
+    const editorContent = this.container.querySelector(
+      ".editor-content"
+    ) as HTMLElement;
+    return editorContent.innerHTML.trim();
+  }
+
+  /**
+   * 设置编辑器内容
+   * @param content - 要写入的 HTML 内容
+   */
+  public setContent(content: string): void {
+    if (!this.container) return;
+
+    const editorContent = this.container.querySelector(
+      ".editor-content"
+    ) as HTMLElement;
+    editorContent.innerHTML = content;
+
+    // 保存初始状态到历史记录
+    this.saveHistoryState(content);
+  }
+
+  /**
+   * 获取纯文本内容
+   */
+  public getPlainText(): string {
+    if (!this.container) return "";
+
+    const editorContent = this.container.querySelector(
+      ".editor-content"
+    ) as HTMLElement;
+    return editorContent.innerText;
+  }
+
+  /**
+   * 插入内容到当前光标位置
+   * @param html - 要插入的 HTML 内容
+   */
+  public insertContent(html: string): void {
+    if (!this.container) return;
+
+    this.restoreSelection({ forceFocus: true });
+
+    const selection = window.getSelection();
+    const range = selection?.getRangeAt(0);
+
+    if (range) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+
+      Array.from(doc.body.children).forEach((node) => {
+        range.insertNode(node.cloneNode(true));
+      });
+
+      // 更新选区到插入内容之后
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+  }
+
+  /**
+   * 替换当前选中内容
+   * @param html - 新的 HTML 内容
+   */
+  public replaceSelection(html: string): void {
+    if (!this.container) return;
+
+    this.restoreSelection({ forceFocus: true });
+
+    const selection = window.getSelection();
+    const range = selection?.getRangeAt(0);
+
+    if (range) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const fragment = document.createDocumentFragment();
+
+      Array.from(doc.body.children).forEach((node) => {
+        fragment.appendChild(node.cloneNode(true));
+      });
+
+      range.deleteContents();
+      range.insertNode(fragment);
+
+      // 更新选区到新插入的内容末尾
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+
+      // 触发内容变化事件以更新历史记录
+      const editorContent = this.container.querySelector(
+        ".editor-content"
+      ) as HTMLElement;
+      this.saveHistoryState(editorContent.innerHTML);
+    }
+  }
+
+  /**
+   * 将 HTML 字符串转换为 DOM 元素
+   * @param htmlString - HTML 字符串
+   * @returns 包含解析内容的 div 元素
+   */
+  public parseHTML(htmlString: string): HTMLElement {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, "text/html");
+    const container = document.createElement("div");
+
+    // 复制所有子节点到容器中
+    while (doc.body.firstChild) {
+      container.appendChild(doc.body.firstChild);
+    }
+
+    return container;
+  }
+
+  /**
+   * 清空编辑器内容
+   */
+  public clearContent(): void {
+    if (!this.container) return;
+
+    const editorContent = this.container.querySelector(
+      ".editor-content"
+    ) as HTMLElement;
+    editorContent.innerHTML = "";
+
+    // 重置历史记录
+    this.history = [];
+    this.historyPointer = -1;
+  }
+
+  public getMarkdown(): string {
+    if (!this.container) return "";
+
+    const editorContent = this.container.querySelector(
+      ".editor-content"
+    ) as HTMLElement;
+    return this.htmlToMarkdownConverter.convert(editorContent.innerHTML);
+  }
+
+  /**
+   * 设置从 Markdown 转换的内容
+   * @param markdown - Markdown 内容
+   */
+  public setMarkdown(markdown: string): void {
+    // TODO: 可以在此处实现 Markdown 解析器来设置内容
+    console.warn("Markdown 到 HTML 的转换尚未实现");
   }
 }
