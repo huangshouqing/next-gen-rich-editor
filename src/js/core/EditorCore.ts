@@ -20,6 +20,9 @@ export default class EditorCore {
   private moduleInstances: Record<string, EditorModuleInstance> = {};
   public savedRange: any;
   public selection: any;
+  private history: string[] = [];
+  private historyPointer: number = -1;
+  private isProcessing: boolean = false;
 
   constructor(selector: string, config: { modules: EditorModule[] }) {
     this.selector = selector;
@@ -29,6 +32,8 @@ export default class EditorCore {
     if (this.container) {
       this.initNativeEditor(this.container);
     }
+    // 新增初始化事件监听
+    this.initContentChangeHandler();
   }
 
   private initModules(): void {
@@ -76,7 +81,69 @@ export default class EditorCore {
           this.moduleInstances["ImageEditor"].openDialog(); // 假设你已注入 ImageEditor 实例
           this.moduleInstances["ImageEditor"].init(); // 启用图片点击交互功能
         }
+        // 处理字体大小选择
+        if (btn.classList.contains("font-size-select")) {
+          const select = btn as HTMLSelectElement;
+          select.addEventListener("change", () => {
+            this.execCommand("fontSize", select.value);
+          });
+          return;
+        }
+        // 处理颜色选择
+        if (cmd === "foreColor" || cmd === "hiliteColor") {
+          e.preventDefault();
+          this.saveSelection(); // 保存当前选区
 
+          // 创建颜色选择器弹窗
+          const colorPicker = document.createElement("input");
+          colorPicker.type = "color";
+          colorPicker.style.position = "absolute";
+          colorPicker.style.top = `${
+            (btn as HTMLElement).getBoundingClientRect().bottom + window.scrollY
+          }px`;
+          colorPicker.style.left = `${
+            (btn as HTMLElement).getBoundingClientRect().left + window.scrollX
+          }px`;
+          colorPicker.style.zIndex = "9999";
+          colorPicker.value = "#000000";
+
+          document.body.appendChild(colorPicker);
+          colorPicker.focus();
+          colorPicker.click();
+
+          // 颜色变化时执行命令
+          colorPicker.addEventListener("change", () => {
+            this.restoreSelection({ forceFocus: true });
+            this.execCommand(cmd, colorPicker.value);
+            document.body.removeChild(colorPicker);
+          });
+
+          // 点击外部关闭
+          const handleClickOutside = (ev: MouseEvent) => {
+            if (!colorPicker.contains(ev.target as Node)) {
+              document.body.removeChild(colorPicker);
+              document.removeEventListener("click", handleClickOutside);
+            }
+          };
+          setTimeout(
+            () => document.addEventListener("click", handleClickOutside),
+            0
+          );
+
+          return;
+        }
+        // 处理撤销/重做
+        if (cmd === "undo") {
+          e.preventDefault();
+          this.undo();
+          return;
+        }
+
+        if (cmd === "redo") {
+          e.preventDefault();
+          this.redo();
+          return;
+        }
         if (cmd) {
           this.execCommand(cmd, value);
         }
@@ -207,18 +274,57 @@ export default class EditorCore {
     </button>
   
     <!-- 字体样式 -->
-    <select class="btn font-size-select" data-cmd="fontSize">
+   <div class="font-size-select-container">
+    <select class="font-size-select" data-cmd="fontSize">
       <option value="">字号</option>
-      <option value="12px">12px</option>
-      <option value="14px">14px</option>
-      <option value="16px">16px</option>
-      <option value="18px">18px</option>
-      <option value="24px">24px</option>
+      <option value="12px">Aa-小</option>
+      <option value="14px">Aa-</option>
+      <option value="16px">Aa</option>
+      <option value="18px">Aa+</option>
+      <option value="24px">Aa++</option>
     </select>
+    <div class="font-size-select-arrow">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </div>
+  </div>
   
     <!-- 颜色选择 -->
-    <input type="color" class="btn color-picker" data-cmd="foreColor" title="文字颜色" />
-    <input type="color" class="btn bg-color-picker" data-cmd="hiliteColor" title="背景颜色" />
+   <button class="btn color-picker-btn" data-cmd="foreColor" title="文字颜色">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+    <path d="M7 15l5-5 5 5"></path>
+  </svg>
+</button>
+
+<button class="btn bg-color-picker-btn" data-cmd="hiliteColor" title="背景颜色">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+    <line x1="2" y1="17" x2="22" y2="17"></line>
+    <line x1="6" y1="11" x2="6" y2="21"></line>
+    <line x1="10" y1="11" x2="10" y2="21"></line>
+    <line x1="14" y1="11" x2="14" y2="21"></line>
+    <line x1="18" y1="11" x2="18" y2="21"></line>
+  </svg>
+</button>
+<!-- 撤销 -->
+<button class="btn" data-cmd="undo">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 7v6h6"></path>
+    <path d="M3 13l-2-2 2-2"></path>
+    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 15"></path>
+  </svg>
+</button>
+
+<!-- 重做 -->
+<button class="btn" data-cmd="redo">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 17v-6h-6"></path>
+    <path d="M21 11l2 2-2 2"></path>
+    <path d="M3 7a9 9 0 0 1 9 9 9 9 0 0 1-6-15"></path>
+  </svg>
+</button>
   `;
 
     // 创建可编辑区域
@@ -259,5 +365,83 @@ export default class EditorCore {
       this.selection?.rangeCount > 0
         ? this.selection.getRangeAt(0).cloneRange()
         : null;
+  }
+  /**
+   * 监听内容变化并保存到历史记录
+   */
+  private initContentChangeHandler(): void {
+    if (!this.container) return;
+
+    const editorContent = this.container.querySelector(".editor-content");
+    if (!editorContent) return;
+
+    let debounceTimer: number | null = null;
+
+    editorContent.addEventListener("input", () => {
+      if (this.isProcessing) return;
+
+      // 防抖处理
+      if (debounceTimer) clearTimeout(debounceTimer);
+
+      debounceTimer = window.setTimeout(() => {
+        this.saveHistoryState(editorContent.innerHTML);
+      }, 300);
+    });
+
+    // 初始化时保存初始状态
+    this.saveHistoryState(editorContent.innerHTML);
+  }
+
+  /**
+   * 保存当前编辑器状态到历史记录
+   */
+  public saveHistoryState(content: string): void {
+    // 如果不是在执行 undo/redo 操作时才保存
+    if (!this.isProcessing) {
+      // 清除当前指针之后的历史
+      this.history = this.history.slice(0, this.historyPointer + 1);
+
+      // 添加新状态
+      this.history.push(content);
+      this.historyPointer = this.history.length - 1;
+    }
+  }
+
+  /**
+   * 执行撤销操作
+   */
+  public undo(): void {
+    if (this.historyPointer <= 0) return;
+
+    this.isProcessing = true;
+    this.historyPointer--;
+
+    const editorContent = this.container?.querySelector(
+      ".editor-content"
+    ) as HTMLElement;
+    editorContent.innerHTML = this.history[this.historyPointer];
+
+    // 恢复选区
+    this.restoreSelection({ forceFocus: true });
+    this.isProcessing = false;
+  }
+
+  /**
+   * 执行重做操作
+   */
+  public redo(): void {
+    if (this.historyPointer >= this.history.length - 1) return;
+
+    this.isProcessing = true;
+    this.historyPointer++;
+
+    const editorContent = this.container?.querySelector(
+      ".editor-content"
+    ) as HTMLElement;
+    editorContent.innerHTML = this.history[this.historyPointer];
+
+    // 恢复选区
+    this.restoreSelection({ forceFocus: true });
+    this.isProcessing = false;
   }
 }
