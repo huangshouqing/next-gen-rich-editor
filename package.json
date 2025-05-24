@@ -1,0 +1,27 @@
+{
+  "name": "rich-editor",
+  "version": "1.0.0",
+  "main": "./dist/rich-editor.umd.js",
+  "module": "./dist/rich-editor.es.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "restart": "rm -rf node_modules/.vite && npm run dev",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 3000"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.32.1",
+    "@vuese/markdown-render": "^2.11.3",
+    "@vuese/parser": "^2.10.3",
+    "eslint": "^9.27.0",
+    "vite": "^6.3.5",
+    "vite-plugin-css": "^1.0.4"
+  },
+  "dependencies": {
+    "cropperjs": "^1.6.2"
+  }
+}
