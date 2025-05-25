@@ -6,7 +6,4 @@ import ImageEditor from "@/js/modules/ImageEditor.ts";
 import LinkModule from "@/js/modules/LinkModule";
 import FontModule from "@/js/modules/FontModule";
 
-// 初始化编辑器
-const editor = new RichEditor("#editor", {
-  modules: [TableEditor, ImageEditor, LinkModule, FontModule],
-});
+export { RichEditor, TableEditor, ImageEditor, LinkModule, FontModule };

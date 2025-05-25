@@ -1,18 +1,20 @@
 {
-  "name": "rich-editor",
+  "name": "next-gen-rich-editor",
   "version": "1.0.0",
-  "main": "./dist/rich-editor.umd.js",
-  "module": "./dist/rich-editor.es.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist-lib/next-gen-rich-editor.umd.js",
+  "module": "dist-lib/next-gen-rich-editor.es.js",
+  "types": "src/types.d.ts",
+  "files": [
+    "dist-lib/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "restart": "rm -rf node_modules/.vite && npm run dev",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 3000"
   },
-  "files": [
-    "dist"
-  ],
   "devDependencies": {
     "@typescript-eslint/parser": "^8.32.1",
     "@vuese/markdown-render": "^2.11.3",
@@ -23,6 +25,7 @@
   },
   "dependencies": {
     "cropperjs": "^1.6.2",
-    "rangy": "^1.3.2"
+    "rangy": "^1.3.2",
+    "terser": "^5.39.2"
   }
 }

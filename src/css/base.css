@@ -5,7 +5,7 @@
 }
 
 /* 添加原生编辑器样式 */
-.rich-editor {
+.next-gen-rich-editor {
   border: 1px solid #e6e6e6;
   border-radius: 4px;
   margin: 20px 0;
@@ -55,7 +55,7 @@
 }
 
 /* 禁止按钮获取焦点 */
-.rich-editor .toolbar .btn {
+.next-gen-rich-editor .toolbar .btn {
   user-select: none;
   outline: none !important;
 }

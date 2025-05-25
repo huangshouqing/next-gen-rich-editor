@@ -10,7 +10,7 @@ npm run build # 构建生产环境代码，生成 dist 目录
 # 本地调试
 npm link
 cd test-project
-npm link rich-editor
+npm link next-gen-rich-editor
 ```
 
 ### ⚙️ 环境要求
@@ -27,12 +27,12 @@ npm link rich-editor
 
 | 方法 | 参数 | 返回值 | 功能说明 |
 |------|------|--------|----------|
-| [getContent()](file:///Users/huangshouqing/Desktop/代码/rich-editor/src/js/core/EditorCore.ts#L491-L498) | 无 | `string` | 获取当前 HTML 内容 |
-| [setContent(content)](file:///Users/huangshouqing/Desktop/代码/rich-editor/src/js/core/EditorCore.ts#L504-L514) | `content: string` | `void` | 设置新的 HTML 内容 |
-| [getPlainText()](file:///Users/huangshouqing/Desktop/代码/rich-editor/src/js/core/EditorCore.ts#L519-L526) | 无 | `string` | 获取纯文本内容 |
-| [insertContent(html)](file:///Users/huangshouqing/Desktop/代码/rich-editor/src/js/core/EditorCore.ts#L532-L553) | `html: string` | `void` | 在当前光标处插入内容 |
-| [replaceSelection(html)](file:///Users/huangshouqing/Desktop/代码/rich-editor/src/js/core/EditorCore.ts#L559-L590) | `html: string` | `void` | 替换当前选中内容 |
-| [clearContent()](file:///Users/huangshouqing/Desktop/代码/rich-editor/src/js/core/EditorCore.ts#L613-L624) | 无 | `void` | 清空编辑器内容 |
+| [getContent()](file:///Users/huangshouqing/Desktop/代码/next-gen-rich-editor/src/js/core/EditorCore.ts#L491-L498) | 无 | `string` | 获取当前 HTML 内容 |
+| [setContent(content)](file:///Users/huangshouqing/Desktop/代码/next-gen-rich-editor/src/js/core/EditorCore.ts#L504-L514) | `content: string` | `void` | 设置新的 HTML 内容 |
+| [getPlainText()](file:///Users/huangshouqing/Desktop/代码/next-gen-rich-editor/src/js/core/EditorCore.ts#L519-L526) | 无 | `string` | 获取纯文本内容 |
+| [insertContent(html)](file:///Users/huangshouqing/Desktop/代码/next-gen-rich-editor/src/js/core/EditorCore.ts#L532-L553) | `html: string` | `void` | 在当前光标处插入内容 |
+| [replaceSelection(html)](file:///Users/huangshouqing/Desktop/代码/next-gen-rich-editor/src/js/core/EditorCore.ts#L559-L590) | `html: string` | `void` | 替换当前选中内容 |
+| [clearContent()](file:///Users/huangshouqing/Desktop/代码/next-gen-rich-editor/src/js/core/EditorCore.ts#L613-L624) | 无 | `void` | 清空编辑器内容 |
 
 ---
 

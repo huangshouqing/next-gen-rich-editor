@@ -207,7 +207,7 @@ export default class EditorCore {
 
   private initNativeEditor(parentContainer: HTMLElement): void {
     const container = document.createElement("div");
-    container.className = "rich-editor";
+    container.className = "next-gen-rich-editor";
     container.contentEditable = "false";
 
     // 创建工具栏
