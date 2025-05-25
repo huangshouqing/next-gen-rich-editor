@@ -202,6 +202,7 @@ export default class TableEditor implements EditorDialog {
    */
   public initContextMenu(editorContent: Element): void {
     editorContent.addEventListener("contextmenu", (e: Event) => {
+      const ev = e as MouseEvent; // 显式断言为 MouseEvent
       const target = e.target as HTMLElement;
 
       let table: HTMLTableElement | null = null;
@@ -212,11 +213,8 @@ export default class TableEditor implements EditorDialog {
       } else if (target.tagName === "TABLE") {
         table = target;
       }
-
       if (!table) return;
-
       e.preventDefault();
-
       // 创建右键菜单
       const menu = document.createElement("div");
       menu.className = "table-context-menu";
@@ -232,8 +230,8 @@ export default class TableEditor implements EditorDialog {
         </ul>
       `;
       menu.style.position = "absolute";
-      menu.style.top = `${e.clientY}px`;
-      menu.style.left = `${e.clientX}px`;
+      menu.style.top = `${ev.clientY}px`;
+      menu.style.left = `${ev.clientX}px`;
       menu.style.backgroundColor = "#fff";
       menu.style.border = "1px solid #ccc";
       menu.style.padding = "8px";
@@ -241,9 +239,7 @@ export default class TableEditor implements EditorDialog {
       menu.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
       menu.style.fontSize = "14px";
       menu.style.cursor = "pointer";
-
       document.body.appendChild(menu);
-
       menu.querySelectorAll("li").forEach((item) => {
         item.addEventListener("click", () => {
           const action = item.getAttribute("data-action");
@@ -273,7 +269,6 @@ export default class TableEditor implements EditorDialog {
           menu.remove();
         });
       });
-
       const closeMenu = (ev: MouseEvent) => {
         if (!menu.contains(ev.target as Node)) {
           menu.remove();
@@ -281,7 +276,6 @@ export default class TableEditor implements EditorDialog {
         }
       };
       setTimeout(() => document.addEventListener("click", closeMenu), 0);
-
       // 新增全局点击监听
       const handleGlobalClick = (ev: MouseEvent) => {
         if (!table?.contains(ev.target as Node)) {

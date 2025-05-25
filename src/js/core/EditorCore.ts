@@ -13,6 +13,8 @@ interface EditorModuleInstance {
 import "@/css/base.css";
 import "@/css/dialog.css";
 import "@/css/toolbar.css";
+import "@/css/table.css";
+import "@/css/image.css";
 // 在文件顶部添加
 import HtmlToMarkdown from "@/js/modules/HtmlToMarkdown";
 
@@ -100,7 +102,6 @@ export default class EditorCore {
         if (cmd === "foreColor" || cmd === "hiliteColor") {
           e.preventDefault();
           this.saveSelection(); // 保存当前选区
-
           // 创建颜色选择器弹窗
           const colorPicker = document.createElement("input");
           colorPicker.type = "color";
@@ -113,11 +114,9 @@ export default class EditorCore {
           }px`;
           colorPicker.style.zIndex = "9999";
           colorPicker.value = "#000000";
-
           document.body.appendChild(colorPicker);
           colorPicker.focus();
           colorPicker.click();
-
           // 颜色变化时执行命令
           colorPicker.addEventListener("change", () => {
             this.restoreSelection({ forceFocus: true });
@@ -128,13 +127,13 @@ export default class EditorCore {
           // 点击外部关闭
           const handleClickOutside = (ev: MouseEvent) => {
             if (!colorPicker.contains(ev.target as Node)) {
-              document.body.removeChild(colorPicker);
-              document.removeEventListener("click", handleClickOutside);
+              if (document.body.contains(colorPicker)) {
+                document.body.removeChild(colorPicker);
+              }
             }
           };
-          setTimeout(
-            () => document.addEventListener("click", handleClickOutside),
-            0
+          setTimeout(() =>
+            document.addEventListener("click", handleClickOutside, { once: true })
           );
 
           return;
@@ -159,7 +158,6 @@ export default class EditorCore {
               this.clearContent();
             }
             break;
-
           case "insertSample":
             e.preventDefault();
             this.setContent(`
@@ -175,7 +173,6 @@ export default class EditorCore {
           case "toMarkdown":
             e.preventDefault();
             const markdown = this.getMarkdown();
-
             // 显示结果弹窗
             const previewWindow = window.open("", "_blank");
             if (previewWindow) {

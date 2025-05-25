@@ -1,62 +1,50 @@
-// js/modules/ContextMenu.js
 export default class ContextMenu {
-  constructor(editor) {
-    this.editor = editor;
-    this.menu = this._createMenu();
-    document.addEventListener(
-      "contextmenu",
-      this._handleContextMenu.bind(this)
-    );
-  }
+  private menu: HTMLElement;
+  constructor(items: { label: string; handler: () => void }[]) {
+    this.menu = document.createElement("div");
+    this.menu.className = "next-gen-rich-editor-context-menu";
+    this.menu.style.position = "absolute";
+    this.menu.style.zIndex = "9999";
+    this.menu.style.background = "#fff";
+    this.menu.style.border = "1px solid #ccc";
+    this.menu.style.padding = "8px 0";
+    this.menu.style.borderRadius = "4px";
+    this.menu.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+    this.menu.style.fontSize = "14px";
+    this.menu.style.display = "none";
 
-  _createMenu() {
-    const menu = document.createElement("div");
-    menu.className = "context-menu";
-    menu.innerHTML = `
-        <div class="context-menu-item" data-action="cut">剪切</div>
-        <div class="context-menu-item" data-action="copy">复制</div>
-        <div class="context-menu-item" data-action="delete">删除</div>
-      `;
-    document.body.appendChild(menu);
-    return menu;
-  }
-
-  _handleContextMenu(e) {
-    if (e.target.closest(".editor-content")) {
-      e.preventDefault();
-      this._showMenu(e.clientX, e.clientY);
-      this._setupMenuActions(e.target);
-    }
-  }
-
-  _showMenu(x, y) {
-    this.menu.style.display = "block";
-    this.menu.style.left = `${x}px`;
-    this.menu.style.top = `${y}px`;
-  }
-
-  _setupMenuActions(target) {
-    this.menu.querySelectorAll(".context-menu-item").forEach((item) => {
-      item.addEventListener("click", () => {
-        const action = item.dataset.action;
-        this._handleAction(action, target);
-        this.menu.style.display = "none";
+    items.forEach((item) => {
+      const itemElement = document.createElement("div");
+      itemElement.textContent = item.label;
+      itemElement.style.padding = "6px 16px";
+      itemElement.style.cursor = "pointer";
+      itemElement.style.transition = "background 0.2s";
+      itemElement.addEventListener("click", () => {
+        item.handler();
+        this.hide();
       });
+      itemElement.addEventListener("mouseenter", () => {
+        itemElement.style.backgroundColor = "#f0f0f0";
+      });
+      itemElement.addEventListener("mouseleave", () => {
+        itemElement.style.backgroundColor = "transparent";
+      });
+      this.menu.appendChild(itemElement);
     });
+    document.body.appendChild(this.menu);
   }
 
-  _handleAction(action, target) {
-    switch (action) {
-      case "delete":
-        target.parentNode.removeChild(target);
-        break;
-      case "copy":
-        navigator.clipboard.writeText(target.textContent);
-        break;
-      case "cut":
-        navigator.clipboard.writeText(target.textContent);
-        target.parentNode.removeChild(target);
-        break;
-    }
+  public show(x: number, y: number): void {
+    this.menu.style.top = `${y}px`;
+    this.menu.style.left = `${x}px`;
+    this.menu.style.display = "block";
+  }
+
+  public hide(): void {
+    this.menu.style.display = "none";
+  }
+
+  public destroy(): void {
+    document.body.removeChild(this.menu);
   }
 }

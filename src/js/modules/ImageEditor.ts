@@ -1,6 +1,7 @@
 import EditorCore from "@/js/core/EditorCore";
 import "@/css/image.css";
 import "cropperjs/src/css/cropper.css";
+import ContextMenu from "@/js/modules/ContextMenu";
 
 import Cropper from "cropperjs";
 /**
@@ -8,7 +9,7 @@ import Cropper from "cropperjs";
  */
 export default class ImageEditor {
   private editor: EditorCore;
-
+  private imageMenus = new Map<HTMLImageElement, ContextMenu>();
   constructor(editor: EditorCore) {
     this.editor = editor;
   }
@@ -215,7 +216,7 @@ export default class ImageEditor {
    */
   private insertImage(src: string): void {
     // 恢复选区
-    this.editor.restoreSelection(true)
+    this.editor.restoreSelection(true);
     const img = document.createElement("img");
     img.src = src;
     img.classList.add("editable-image");
@@ -273,103 +274,111 @@ export default class ImageEditor {
     editorContent.addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
       if (target.tagName === "IMG") {
-        this.showImageToolbar(target);
+        // 只在非右键点击时触发恢复焦点等逻辑
+        const editorContent =
+          this.editor.container?.querySelector(".editor-content");
+        editorContent?.focus();
       }
     });
-  }
-  private showImageToolbar(img: HTMLImageElement): void {
-    const toolbar = document.createElement("div");
-    toolbar.className = "image-toolbar";
-    toolbar.innerHTML = `
-    <button class="align-btn" data-align="left" title="左对齐">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="3" y1="7" x2="21" y2="7"></line>
-        <line x1="3" y1="12" x2="15" y2="12"></line>
-        <line x1="3" y1="17" x2="21" y2="17"></line>
-      </svg>
-    </button>
-  
-    <button class="align-btn" data-align="center" title="居中">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="3" y1="7" x2="21" y2="7"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-        <line x1="3" y1="17" x2="21" y2="17"></line>
-      </svg>
-    </button>
-  
-    <button class="align-btn" data-align="right" title="右对齐">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="3" y1="7" x2="21" y2="7"></line>
-        <line x1="9" y1="12" x2="21" y2="12"></line>
-        <line x1="5" y1="17" x2="21" y2="17"></line>
-      </svg>
-    </button>
-  
-    <button class="delete-btn" title="删除">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="3 6 5 6 21 6"></polyline>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-        <line x1="9" y1="12" x2="9" y2="18"></line>
-        <line x1="15" y1="12" x2="15" y2="18"></line>
-      </svg>
-    </button>
-  `;
 
-    // 设置位置
-    const rect = img.getBoundingClientRect();
-    toolbar.style.position = "absolute";
-    toolbar.style.top = `${rect.bottom + window.scrollY}px`;
-    toolbar.style.left = `${rect.left + window.scrollX}px`;
-    toolbar.style.zIndex = "9999";
-    toolbar.style.background = "#fff";
-    toolbar.style.border = "1px solid #ccc";
-    toolbar.style.padding = "4px";
-    toolbar.style.borderRadius = "4px";
-
-    document.body.appendChild(toolbar);
-
-    // 对齐事件绑定
-    toolbar.querySelectorAll(".align-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const align = btn.getAttribute("data-align");
-        switch (align) {
-          case "left":
-            img.style.float = "left";
-            img.style.marginRight = "10px";
-            break;
-          case "center":
-            img.style.display = "block";
-            img.style.margin = "10px auto";
-            break;
-          case "right":
-            img.style.float = "right";
-            img.style.marginLeft = "10px";
-            break;
-        }
-        toolbar.remove();
-      });
-    });
-
-    // 删除按钮
-    toolbar.querySelector(".delete-btn")?.addEventListener("click", () => {
-      img.remove();
-      toolbar.remove();
-    });
-    // 可选：点击页面其他地方关闭工具栏
-    const handleClickOutside = (e: MouseEvent) => {
-      if (!toolbar.contains(e.target as Node)) {
-        toolbar.remove();
-        document.removeEventListener("mousedown", handleClickOutside);
+    editorContent.addEventListener("contextmenu", (e: Event) => {
+      const ev = e as MouseEvent; // 显式断言为 MouseEvent
+      const target = e.target as HTMLElement;
+      if (target.tagName === "IMG") {
+        e.preventDefault(); // 阻止默认右键菜单
+        this.showImageContextMenu(target as HTMLImageElement, ev);
       }
-    };
-    setTimeout(() => {
-      document.addEventListener("mousedown", handleClickOutside);
-    }, 0);
+    });
   }
   /**
    * 关闭弹窗
    */
   private _closeDialog(dialog: HTMLDivElement): void {
     dialog.remove();
+  }
+
+  /**
+   * 创建右键弹框
+   * @param img
+   * @param event
+   * @returns
+   */
+  private showImageContextMenu(img: HTMLImageElement, event: MouseEvent): void {
+    // 全局隐藏所有已存在的上下文菜单
+    this.imageMenus.forEach((menu) => {
+      if (menu) {
+        menu.hide();
+      }
+    });
+
+    const menuItems = [
+      {
+        label: "左对齐",
+        handler: () => {
+          img.style.float = "left";
+          img.style.marginRight = "10px";
+          img.style.marginLeft = "0";
+          img.style.display = "inline-block";
+        },
+      },
+      {
+        label: "居中",
+        handler: () => {
+          img.style.float = "none";
+          img.style.display = "block";
+          img.style.margin = "10px auto";
+        },
+      },
+      {
+        label: "右对齐",
+        handler: () => {
+          img.style.float = "right";
+          img.style.marginLeft = "10px";
+          img.style.marginRight = "0";
+          img.style.display = "inline-block";
+        },
+      },
+      {
+        label: "删除图片",
+        handler: () => {
+          img.remove();
+        },
+      },
+    ];
+
+    let contextMenu = this.imageMenus.get(img);
+    if (contextMenu) {
+      contextMenu.show(event.clientX, event.clientY); // 如果已存在菜单，直接复用并显示
+      return;
+    }
+
+    contextMenu = new ContextMenu(menuItems);
+    contextMenu.show(event.clientX, event.clientY);
+    this.imageMenus.set(img, contextMenu);
+
+    // 绑定右键菜单事件
+    const contextMenuHandler = (e: MouseEvent) => {
+      e.preventDefault();
+      contextMenu.show(e.clientX, e.clientY);
+    };
+    img.addEventListener("contextmenu", contextMenuHandler);
+
+    // 点击其他地方关闭菜单
+    const documentClickHandler = (e: MouseEvent) => {
+      if (this.imageMenus.get(img)) {
+        contextMenu.hide();
+      }
+    };
+    document.addEventListener("click", documentClickHandler);
+
+    // 清理函数（当 img 被移除时自动执行）
+    const cleanup = () => {
+      contextMenu.destroy();
+      img.removeEventListener("contextmenu", contextMenuHandler);
+      document.removeEventListener("click", documentClickHandler);
+      this.imageMenus.delete(img);
+    };
+
+    img.addEventListener("remove", cleanup);
   }
 }
