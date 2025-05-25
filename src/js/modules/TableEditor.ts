@@ -1,5 +1,6 @@
 import EditorCore from "@/js/core/EditorCore";
 import "@/css/table.css";
+import ContextMenu from "@/js/modules/ContextMenu";
 interface EditorDialog {
   dialog: HTMLDivElement | null;
 }
@@ -7,6 +8,7 @@ interface EditorDialog {
 export default class TableEditor implements EditorDialog {
   public editor: EditorCore;
   public dialog: HTMLDivElement | null;
+  private tableMenus = new Map<HTMLElement, ContextMenu>();
 
   constructor(editor: EditorCore) {
     this.editor = editor;
@@ -204,10 +206,8 @@ export default class TableEditor implements EditorDialog {
     editorContent.addEventListener("contextmenu", (e: Event) => {
       const ev = e as MouseEvent; // 显式断言为 MouseEvent
       const target = e.target as HTMLElement;
-
       let table: HTMLTableElement | null = null;
       if (target.tagName === "TD" || target.tagName === "TH") {
-        // this._clearCellSelection(target.closest("table")!); // 先清空其他选中
         target.classList.add("selected-cell");
         table = target.closest("table");
       } else if (target.tagName === "TABLE") {
@@ -215,69 +215,67 @@ export default class TableEditor implements EditorDialog {
       }
       if (!table) return;
       e.preventDefault();
-      // 创建右键菜单
-      const menu = document.createElement("div");
-      menu.className = "table-context-menu";
-      menu.innerHTML = `
-        <ul>
-          <li data-action="add-row">新增行</li>
-          <li data-action="add-col">新增列</li>
-          <li data-action="delete-row">删除行</li>
-          <li data-action="delete-col">删除列</li>
-          <li data-action="merge-cells">合并单元格</li>
-          <li data-action="unmerge-cells">取消合并</li>
-          <li data-action="set-bgcolor">设置背景色</li>
-        </ul>
-      `;
-      menu.style.position = "absolute";
-      menu.style.top = `${ev.clientY}px`;
-      menu.style.left = `${ev.clientX}px`;
-      menu.style.backgroundColor = "#fff";
-      menu.style.border = "1px solid #ccc";
-      menu.style.padding = "8px";
-      menu.style.zIndex = "9999";
-      menu.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-      menu.style.fontSize = "14px";
-      menu.style.cursor = "pointer";
-      document.body.appendChild(menu);
-      menu.querySelectorAll("li").forEach((item) => {
-        item.addEventListener("click", () => {
-          const action = item.getAttribute("data-action");
-          switch (action) {
-            case "merge-cells":
-              this.mergeCells(table!);
-              break;
-            case "unmerge-cells":
-              this.unmergeCells(table!);
-              break;
-            case "set-bgcolor":
-              this.openColorPickerForSelection(table!);
-              break;
-            case "add-row":
-              this.addRow(table!);
-              break;
-            case "add-col":
-              this.addColumn(table!);
-              break;
-            case "delete-row":
-              this.deleteRow(table!);
-              break;
-            case "delete-col":
-              this.deleteColumn(table!);
-              break;
-          }
-          menu.remove();
-        });
+      // 全局隐藏所有已存在的上下文菜单
+      this.tableMenus.forEach((menu) => {
+        if (menu) {
+          menu.hide();
+        }
       });
-      const closeMenu = (ev: MouseEvent) => {
-        if (!menu.contains(ev.target as Node)) {
-          menu.remove();
-          document.removeEventListener("click", closeMenu);
+      const menuItems = [
+        {
+          label: "新增行",
+          action: "add-row",
+          handler: () => this.addRow(table),
+        },
+        {
+          label: "新增列",
+          action: "add-col",
+          handler: () => this.addColumn(table),
+        },
+        {
+          label: "删除行",
+          action: "delete-row",
+          handler: () => this.deleteRow(table),
+        },
+        {
+          label: "删除列",
+          action: "delete-col",
+          handler: () => this.deleteColumn(table),
+        },
+        {
+          label: "合并单元格",
+          action: "merge-cells",
+          handler: () => this.mergeCells(table),
+        },
+        {
+          label: "取消合并",
+          action: "unmerge-cells",
+          handler: () => this.unmergeCells(table),
+        },
+        {
+          label: "设置背景色",
+          action: "set-bgcolor",
+          handler: () => this.openColorPickerForSelection(table),
+        },
+      ];
+      let contextMenu = this.tableMenus.get(target);
+      if (contextMenu) {
+        contextMenu.show(ev.clientX, ev.clientY); // 如果已存在菜单，直接复用并显示
+        return;
+      }
+      contextMenu = new ContextMenu(menuItems);
+      contextMenu.show(ev.clientX, ev.clientY);
+      this.tableMenus.set(target, contextMenu);
+      // 点击其他地方清除 menu
+      const closeMenu = () => {
+        if (this.tableMenus.get(target)) {
+          contextMenu.hide();
         }
       };
       setTimeout(() => document.addEventListener("click", closeMenu), 0);
       // 新增全局点击监听
       const handleGlobalClick = (ev: MouseEvent) => {
+        debugger;
         if (!table?.contains(ev.target as Node)) {
           this._clearCellSelection(table!);
           document.removeEventListener("click", handleGlobalClick);
@@ -286,78 +284,6 @@ export default class TableEditor implements EditorDialog {
       document.addEventListener("click", handleGlobalClick);
     });
   }
-
-  /**
-   * 初始化表格内单元格拖动选择功能
-   */
-  // public initTableCellSelection(table: HTMLTableElement): void {
-  //   let isSelecting = false;
-  //   let startCell: HTMLTableCellElement | null = null;
-
-  //   // 新增：防止事件冒泡干扰
-  //   const stopPropagation = (e: MouseEvent) => e.stopPropagation();
-
-  //   const handleMouseDown = (e: MouseEvent) => {
-  //     const target = e.target as HTMLElement;
-  //     if (target.tagName === "TD" || target.tagName === "TH") {
-  //       isSelecting = true;
-  //       startCell = target as HTMLTableCellElement;
-  //       clearSelection();
-  //       highlightCell(startCell);
-  //       table.style.userSelect = "none"; // 禁用文本选择
-  //     }
-  //   };
-
-  //   const handleMouseMove = (e: MouseEvent) => {
-  //     if (!isSelecting || !startCell) return;
-  //     const target = e.target as HTMLElement;
-  //     if (target.tagName === "TD" || target.tagName === "TH") {
-  //       highlightCell(target as HTMLTableCellElement);
-  //     }
-  //   };
-
-  //   const handleMouseUp = () => {
-  //     isSelecting = false;
-  //     startCell = null;
-  //     table.style.userSelect = ""; // 恢复文本选择
-  //   };
-
-  //   // 优化后的高亮逻辑
-  //   const highlightCell = (endCell: HTMLTableCellElement) => {
-  //     const startRow = startCell!.parentElement!.rowIndex;
-  //     const startCol = startCell!.cellIndex;
-  //     const endRow = endCell.parentElement!.rowIndex;
-  //     const endCol = endCell.cellIndex;
-
-  //     const minRow = Math.min(startRow, endRow);
-  //     const maxRow = Math.max(startRow, endRow);
-  //     const minCol = Math.min(startCol, endCol);
-  //     const maxCol = Math.max(startCol, endCol);
-
-  //     // 遍历所有可见单元格（考虑合并单元格）
-  //     table.querySelectorAll("td, th").forEach(cell => {
-  //       const cellRow = cell.parentElement!.rowIndex;
-  //       const cellCol = cell.cellIndex;
-
-  //       // 判断是否在选中区域内
-  //       const isInRange =
-  //         cellRow >= minRow &&
-  //         cellRow <= maxRow &&
-  //         cellCol >= minCol &&
-  //         cellCol <= maxCol;
-
-  //       cell.classList.toggle("selected-cell", isInRange);
-  //     });
-  //   };
-
-  //   // 绑定事件（新增 mousemove 监听）
-  //   table.addEventListener("mousedown", handleMouseDown);
-  //   table.addEventListener("mousemove", handleMouseMove);
-  //   document.addEventListener("mouseup", handleMouseUp);
-
-  //   // 防止事件冲突
-  //   table.addEventListener("mousedown", stopPropagation);
-  // }
   /**
    * 新增一行
    */
@@ -497,8 +423,8 @@ export default class TableEditor implements EditorDialog {
     table
       .querySelectorAll<HTMLTableCellElement>('[data-merged="true"]')
       .forEach((cell) => {
-        cell.style.display = "";
-        delete cell.dataset.merged;
+        cell.removeAttribute("data-merged");
+        cell.style.display = ""; // 恢复显示
       });
 
     // 移除合并属性
@@ -506,9 +432,11 @@ export default class TableEditor implements EditorDialog {
     mergedCell.removeAttribute("colspan");
 
     // 重建单元格结构
-    const affectedRows = Array.from(table.rows).filter((row) =>
-      row.cells.some((cell) => cell.dataset.merged)
-    );
+    const affectedRows = Array.from(table.rows).filter((row) => {
+      return Array.from(row.cells).some(
+        (cell) => cell && cell.dataset && cell.dataset.merged
+      );
+    });
 
     affectedRows.forEach((row) => {
       const newCells = Array.from(row.cells).map((cell) => {

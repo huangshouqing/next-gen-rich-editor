@@ -310,7 +310,6 @@ export default class ImageEditor {
         menu.hide();
       }
     });
-
     const menuItems = [
       {
         label: "左对齐",
@@ -345,24 +344,20 @@ export default class ImageEditor {
         },
       },
     ];
-
     let contextMenu = this.imageMenus.get(img);
     if (contextMenu) {
       contextMenu.show(event.clientX, event.clientY); // 如果已存在菜单，直接复用并显示
       return;
     }
-
     contextMenu = new ContextMenu(menuItems);
     contextMenu.show(event.clientX, event.clientY);
     this.imageMenus.set(img, contextMenu);
-
     // 绑定右键菜单事件
     const contextMenuHandler = (e: MouseEvent) => {
       e.preventDefault();
       contextMenu.show(e.clientX, e.clientY);
     };
     img.addEventListener("contextmenu", contextMenuHandler);
-
     // 点击其他地方关闭菜单
     const documentClickHandler = (e: MouseEvent) => {
       if (this.imageMenus.get(img)) {
@@ -370,7 +365,6 @@ export default class ImageEditor {
       }
     };
     document.addEventListener("click", documentClickHandler);
-
     // 清理函数（当 img 被移除时自动执行）
     const cleanup = () => {
       contextMenu.destroy();
@@ -378,7 +372,6 @@ export default class ImageEditor {
       document.removeEventListener("click", documentClickHandler);
       this.imageMenus.delete(img);
     };
-
     img.addEventListener("remove", cleanup);
   }
 }

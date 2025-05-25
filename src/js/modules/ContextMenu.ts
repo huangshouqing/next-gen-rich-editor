@@ -7,7 +7,7 @@ export default class ContextMenu {
     this.menu.style.zIndex = "9999";
     this.menu.style.background = "#fff";
     this.menu.style.border = "1px solid #ccc";
-    this.menu.style.padding = "8px 0";
+    this.menu.style.padding = "8px";
     this.menu.style.borderRadius = "4px";
     this.menu.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
     this.menu.style.fontSize = "14px";
