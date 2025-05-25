@@ -4,6 +4,12 @@ import RichEditor from "@/js/core/EditorCore.ts";
 import TableEditor from "@/js/modules/TableEditor.ts";
 import ImageEditor from "@/js/modules/ImageEditor.ts";
 import LinkModule from "@/js/modules/LinkModule";
-import FontModule from "@/js/modules/FontModule";
+import FontSizeModule from "@/js/modules/FontSizeModule";
 
-export { RichEditor, TableEditor, ImageEditor, LinkModule, FontModule };
+export {
+  RichEditor,
+  TableEditor,
+  ImageEditor,
+  LinkModule,
+  FontSizeModule,
+};

@@ -14,10 +14,6 @@ export default class TableEditor implements EditorDialog {
     this.editor = editor;
     this.dialog = null;
   }
-
-  /**
-   * 打开网格选择器弹窗
-   */
   /**
    * 打开网格选择器弹窗
    */
@@ -158,7 +154,6 @@ export default class TableEditor implements EditorDialog {
         .forEach((cell) => cell.classList.remove("selected"));
     }
   }
-
   /**
    * 插入表格到编辑器内容中
    * @param rows 行数
@@ -330,6 +325,10 @@ export default class TableEditor implements EditorDialog {
       console.error("删除行失败:", error);
     }
   }
+  /**
+   * 
+   * @param table 
+   */
   private _clearCellSelection(table?: HTMLTableElement): void {
     // 支持全局清除
     const tables = table
@@ -484,6 +483,9 @@ export default class TableEditor implements EditorDialog {
     }
   }
 
+  /**
+   * 添加右键菜单
+   */
   initRightClickMenu() {
     // 初始化右键菜单
     const editorContent =

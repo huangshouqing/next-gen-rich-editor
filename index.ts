@@ -4,8 +4,19 @@ import {
   TableEditor,
   ImageEditor,
   LinkModule,
-  FontModule,
+  FontSizeModule,
 } from "./src/main";
-const editor = new RichEditor("#editor", {
-  modules: [TableEditor, ImageEditor, LinkModule, FontModule],
+new RichEditor("#editor", {
+  toolbar: [
+    ["bold", "italic", "underline", "strikeThrough"],
+    ["justifyLeft", "justifyCenter", "justifyRight", "justifyFull"],
+    ["insertUnorderedList", "insertOrderedList"],
+    ["indent", "outdent"],
+    ["insertTable", "createLink", "insertImage"],
+    ["foreColor", "hiliteColor"],
+    ["undo", "redo"],
+    ["clear", "insertSample", "toMarkdown"],
+    ["fontSize"],
+  ],
+  modules: [TableEditor, ImageEditor, LinkModule, FontSizeModule],
 });
