@@ -5,6 +5,8 @@ import TableModule from "@/js/modules/TableModule.ts";
 import ImageModule from "@/js/modules/ImageModule.ts";
 import LinkModule from "@/js/modules/LinkModule";
 import FontSizeModule from "@/js/modules/FontSizeModule";
+import FontColorModule from "@/js/modules/FontColorModule";
+import BackgroundColorModule from "./js/modules/BackgroundColorModule";
 
 export {
   RichEditor,
@@ -12,4 +14,6 @@ export {
   ImageModule,
   LinkModule,
   FontSizeModule,
+  FontColorModule,
+  BackgroundColorModule
 };

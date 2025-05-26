@@ -5,6 +5,8 @@ import {
   ImageModule,
   LinkModule,
   FontSizeModule,
+  FontColorModule,
+  BackgroundColorModule,
 } from "./src/main";
 new RichEditor("#editor", {
   toolbar: [
@@ -18,5 +20,11 @@ new RichEditor("#editor", {
     ["undo", "redo"],
     ["clear", "insertSample", "toMarkdown"],
   ],
-  modules: [TableModule, ImageModule, LinkModule, FontSizeModule],
+  modules: [
+    TableModule,
+    ImageModule,
+    LinkModule,
+    FontSizeModule,
+    FontColorModule,
+    BackgroundColorModule,],
 });
