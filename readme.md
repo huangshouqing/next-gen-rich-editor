@@ -41,7 +41,7 @@ npm link next-gen-rich-editor
 ### 初始化编辑器
 ```javascript
 const editor = new EditorCore("#editor-container", {
-  modules: [TableEditor, ImageEditor]
+  modules: [TableModule, ImageModule]
 });
 ```
 

@@ -7,7 +7,7 @@ import Cropper from "cropperjs";
 /**
  * 图片编辑器类，用于上传和插入图片到富文本中（支持弹窗上传）
  */
-export default class ImageEditor {
+export default class ImageModule {
   private editor: EditorCore;
   private imageMenus = new Map<HTMLImageElement, ContextMenu>();
   constructor(editor: EditorCore) {

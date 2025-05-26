@@ -71,41 +71,43 @@ export default class FontSizeModule {
           console.warn("没有选中任何文本");
           return;
         }
-        const commonAncestor = range.commonAncestorContainer;
-        // 查找最近的 span 父节点
-        let spanParent: HTMLSpanElement | null = null;
-        if (commonAncestor.nodeType === Node.ELEMENT_NODE) {
-          spanParent = (commonAncestor as HTMLElement).closest("span");
+        // 检查当前选中的内容是否已经是 span 标签
+        const container = range.commonAncestorContainer;
+        let targetSpan: HTMLElement | null = null;
+
+        if (container.nodeType === Node.ELEMENT_NODE && (container as HTMLElement).nodeName === "SPAN") {
+          targetSpan = container as HTMLElement;
+        } else if (container.nodeType === Node.TEXT_NODE && container.parentElement?.nodeName === "SPAN") {
+          targetSpan = container.parentElement;
         }
-        // 如果已有 span，直接修改它
-        if (spanParent) {
-          spanParent.style.fontSize = size;
-          return;
-        }
-        // 否则创建新 span 并包裹选中内容
-        const span = document.createElement("span");
-        span.style.fontSize = size;
-        try {
-          range.surroundContents(span);
-        } catch (e) {
-          console.warn("无法直接包裹，尝试手动插入");
-          const fragment = range.extractContents();
+        if (targetSpan) {
+          // 如果已经是 span 标签，则直接修改字体大小
+          targetSpan.style.fontSize = size;
+        } else {
+          // 如果不是 span 标签，则创建新的 span 并包裹选中的内容
+          const fragment = this.extractAndUnwrapFontSizeSpans(range);
+          const span = document.createElement("span");
+          span.style.fontSize = size;
           span.appendChild(fragment);
+          range.deleteContents();
           range.insertNode(span);
+          // 合并相邻同字号 span
+          this.mergeAdjacentSpans(span);
         }
-        // 合并相邻 span（可选）
-        this.mergeAdjacentSpans(span);
+
         this.removeExistingDropdown();
       });
       dropdown.appendChild(item);
     });
-    // 定位下拉框（与表格右键菜单一致）
+
+    // 定位下拉框
     const rect = triggerBtn.getBoundingClientRect();
     dropdown.style.position = "absolute";
     dropdown.style.top = `${rect.bottom + window.scrollY}px`;
     dropdown.style.left = `${rect.left + window.scrollX}px`;
     dropdown.style.zIndex = "9999";
     document.body.appendChild(dropdown);
+
     // 点击外部关闭
     const handleClickOutside = (e: MouseEvent) => {
       if (!dropdown.contains(e.target as Node)) {
@@ -117,6 +119,44 @@ export default class FontSizeModule {
       document.addEventListener("click", handleClickOutside, { once: true });
     });
   }
+
+  /**
+   * 提取并解包已有 font-size 样式的 span 内容
+   */
+  private extractAndUnwrapFontSizeSpans(range: Range): DocumentFragment {
+    const fragment = range.extractContents();
+    const spanWalker = document.createTreeWalker(
+      fragment,
+      NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode(node) {
+          return node.nodeName === "SPAN" &&
+            (node as HTMLSpanElement).style.fontSize
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_SKIP;
+        },
+      }
+    );
+
+    const spans: HTMLSpanElement[] = [];
+    while (spanWalker.nextNode()) {
+      spans.push(spanWalker.currentNode as HTMLSpanElement);
+    }
+
+    // 替换每个 span 为其子节点
+    spans.forEach((span) => {
+      const parent = span.parentNode;
+      while (span.firstChild) {
+        parent?.insertBefore(span.firstChild, span);
+      }
+      parent?.removeChild(span);
+    });
+
+    return fragment;
+  }
+  /**
+   * 合并相邻相同字体大小的 span
+   */
   private mergeAdjacentSpans(target: HTMLElement): void {
     const parent = target.parentNode;
     if (!parent) return;

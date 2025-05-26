@@ -24,7 +24,7 @@ export default class EditorCore {
   public container: HTMLElement | null;
   // 注册的模块
   private modules: ModuleConfig[];
-  private TableEditor: EditorModuleInstance | null = null;
+  private TableModule: EditorModuleInstance | null = null;
   private moduleInstances: Record<string, EditorModuleInstance> = {};
   // 保存选区
   public savedRange: any;
@@ -68,8 +68,8 @@ export default class EditorCore {
       // 保存模块实例到 moduleInstances 中以避免类型错误
       this.moduleInstances[moduleName] = instance;
       // 如果某些模块需要挂载到 this 上供外部访问，可以显式声明并赋值
-      if (moduleName === "TableEditor") {
-        this.TableEditor = instance;
+      if (moduleName === "TableModule") {
+        this.TableModule = instance;
       }
     });
   }
@@ -106,13 +106,13 @@ export default class EditorCore {
             if (!value) return;
             break;
           case "insertTable":
-            this.moduleInstances["TableEditor"]?.openGridSelector?.();
-            this.moduleInstances["TableEditor"]?.initRightClickMenu?.();
+            this.moduleInstances["TableModule"]?.openGridSelector?.();
+            this.moduleInstances["TableModule"]?.initRightClickMenu?.();
             break;
           // 插入图片
           case "insertImage":
-            this.moduleInstances["ImageEditor"].openDialog(); // 假设你已注入 ImageEditor 实例
-            this.moduleInstances["ImageEditor"].init(); // 启用图片点击交互功能
+            this.moduleInstances["ImageModule"].openDialog(); // 假设你已注入 ImageModule 实例
+            this.moduleInstances["ImageModule"].init(); // 启用图片点击交互功能
             break;
           case "clear":
             e.preventDefault();

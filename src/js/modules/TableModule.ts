@@ -5,7 +5,7 @@ interface EditorDialog {
   dialog: HTMLDivElement | null;
 }
 
-export default class TableEditor implements EditorDialog {
+export default class TableModule implements EditorDialog {
   public editor: EditorCore;
   public dialog: HTMLDivElement | null;
   private tableMenus = new Map<HTMLElement, ContextMenu>();
