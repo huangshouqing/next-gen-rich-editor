@@ -4,52 +4,21 @@ import EditorCore from "../core/EditorCore";
 export default class FontSizeModule {
   public name = "FontSizeModule";
   private editor: EditorCore;
-  private pxToFontSize(px: string): string {
-    const sizeMap: Record<string, string> = {
-      "10px": "1",
-      "12px": "2",
-      "14px": "3",
-      "16px": "4",
-      "18px": "5",
-      "24px": "6",
-      "32px": "7",
-    };
-    return sizeMap[px] || "3"; // 默认中间值
-  }
   constructor(editor: EditorCore) {
     this.editor = editor;
   }
-
   public init(): void {
     const toolbar = this.editor.container?.querySelector(
       ".toolbar"
     ) as HTMLElement;
     if (!toolbar) return;
-
-    const button = document.createElement("button");
-    button.className = "btn";
-    button.dataset.cmd = "fontSize";
-    button.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 4h3M5 4h3m-3 8h3m-3 8h3M8 4v16M14 9l3-3m3 3l-3 3m-9 3h3m-3-8h3"/>
-      </svg>
-    `;
-
-    // 绑定点击事件
-    button.addEventListener("click", (e) => {
-      e.preventDefault();
-      this.openDropdown(button);
-    });
-
-    // 插入到工具栏合适位置（比如最后）
-    const lastGroup = toolbar.lastElementChild as HTMLElement;
-    if (lastGroup) {
-      lastGroup.appendChild(button);
-    } else {
-      toolbar.appendChild(button);
-    }
+    // 修改为监听 toolbar 内部特定按钮的点击事件
+    const fontSizeButton = toolbar.querySelector(
+      "#font-size-btn"
+    ) as HTMLElement;
+    if (!fontSizeButton) return;
+    this.openDropdown(fontSizeButton);
   }
-
   private openDropdown(triggerBtn: HTMLElement): void {
     // 先清除旧的下拉框
     this.removeExistingDropdown();
@@ -69,15 +38,20 @@ export default class FontSizeModule {
         const selectedText = range.toString();
         if (!selectedText.trim()) {
           console.warn("没有选中任何文本");
-          return;
         }
         // 检查当前选中的内容是否已经是 span 标签
         const container = range.commonAncestorContainer;
         let targetSpan: HTMLElement | null = null;
 
-        if (container.nodeType === Node.ELEMENT_NODE && (container as HTMLElement).nodeName === "SPAN") {
+        if (
+          container.nodeType === Node.ELEMENT_NODE &&
+          (container as HTMLElement).nodeName === "SPAN"
+        ) {
           targetSpan = container as HTMLElement;
-        } else if (container.nodeType === Node.TEXT_NODE && container.parentElement?.nodeName === "SPAN") {
+        } else if (
+          container.nodeType === Node.TEXT_NODE &&
+          container.parentElement?.nodeName === "SPAN"
+        ) {
           targetSpan = container.parentElement;
         }
         if (targetSpan) {
@@ -119,7 +93,6 @@ export default class FontSizeModule {
       document.addEventListener("click", handleClickOutside, { once: true });
     });
   }
-
   /**
    * 提取并解包已有 font-size 样式的 span 内容
    */

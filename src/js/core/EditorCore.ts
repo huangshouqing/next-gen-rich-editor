@@ -15,6 +15,10 @@ import {
   commandIconMap,
 } from "./types";
 
+// 新增模块类：FontColorModule
+
+// 新增模块类：BackgroundColorModule
+
 export default class EditorCore {
   // 选择器
   private selector: string;
@@ -59,15 +63,23 @@ export default class EditorCore {
     if (this.container) {
       this.initNativeEditor(this.container);
     }
+    this.clearNewLineStyles();
   }
 
   private initModules(): void {
     this.modules.forEach((moduleClass) => {
       const instance = new moduleClass(this);
       const moduleName: string = instance.name || moduleClass.name;
-      // 保存模块实例到 moduleInstances 中以避免类型错误
       this.moduleInstances[moduleName] = instance;
-      // 如果某些模块需要挂载到 this 上供外部访问，可以显式声明并赋值
+
+      // 初始化模块
+      if (
+        moduleName === "FontColorModule" ||
+        moduleName === "BackgroundColorModule"
+      ) {
+        instance.init?.();
+      }
+
       if (moduleName === "TableModule") {
         this.TableModule = instance;
       }
@@ -89,15 +101,36 @@ export default class EditorCore {
     if (!this.container) return;
     this.container.querySelectorAll(".btn").forEach((btn: Element) => {
       btn.addEventListener("click", (e) => {
-        debugger;
-        e.preventDefault(); // 阻止默认行为
-        this.saveSelection(); // 保存当前选区
+        e.preventDefault();
+        this.saveSelection();
         const cmd = (btn as HTMLElement).dataset.cmd;
         let value: string | null = null;
         switch (cmd) {
+          case "foreColor":
+            if (this.moduleInstances["FontColorModule"]) {
+              this.moduleInstances["FontColorModule"].showColorPicker?.(
+                btn as HTMLElement
+              );
+            } else {
+              console.warn("FontColorModule 模块未注入，请检查配置。");
+            }
+            break;
+          case "hiliteColor":
+            if (this.moduleInstances["BackgroundColorModule"]) {
+              this.moduleInstances["BackgroundColorModule"].showColorPicker?.(
+                btn as HTMLElement
+              );
+            } else {
+              console.warn("BackgroundColorModule 模块未注入，请检查配置。");
+            }
+            break;
           // 处理字体大小选择
           case "fontSize":
-            this.moduleInstances["FontSizeModule"]?.init?.();
+            if (this.moduleInstances["FontSizeModule"]) {
+              this.moduleInstances["FontSizeModule"].init?.();
+            } else {
+              console.warn("FontSizeModule 模块未注入，请检查配置。");
+            }
             break;
           case "createLink":
             value = prompt(
@@ -106,13 +139,21 @@ export default class EditorCore {
             if (!value) return;
             break;
           case "insertTable":
-            this.moduleInstances["TableModule"]?.openGridSelector?.();
-            this.moduleInstances["TableModule"]?.initRightClickMenu?.();
+            if (this.moduleInstances["TableModule"]) {
+              this.moduleInstances["TableModule"].openGridSelector?.();
+              this.moduleInstances["TableModule"].initRightClickMenu?.();
+            } else {
+              console.warn("TableModule 模块未注入，请检查配置。");
+            }
             break;
           // 插入图片
           case "insertImage":
-            this.moduleInstances["ImageModule"].openDialog(); // 假设你已注入 ImageModule 实例
-            this.moduleInstances["ImageModule"].init(); // 启用图片点击交互功能
+            if (this.moduleInstances["ImageModule"]) {
+              this.moduleInstances["ImageModule"].openDialog();
+              this.moduleInstances["ImageModule"].init();
+            } else {
+              console.warn("ImageModule 模块未注入，请检查配置。");
+            }
             break;
           case "clear":
             e.preventDefault();
@@ -139,21 +180,21 @@ export default class EditorCore {
             const previewWindow = window.open("", "_blank");
             if (previewWindow) {
               previewWindow.document.write(`
-                  <html>
-                    <head>
-                      <title>Markdown Preview</title>
-                      <style>
-                        body { 
-                          font-family: monospace;
-                          white-space: pre-wrap;
-                          padding: 20px;
-                          background: #f8f9fa;
-                        }
-                      </style>
-                    </head>
-                    <body>${markdown}</body>
-                  </html>
-                `);
+                <html>
+                  <head>
+                    <title>Markdown Preview</title>
+                    <style>
+                      body { 
+                        font-family: monospace;
+                        white-space: pre-wrap;
+                        padding: 20px;
+                        background: #f8f9fa;
+                      }
+                    </style>
+                  </head>
+                  <body>${markdown}</body>
+                </html>
+              `);
             }
             break;
           // 处理撤销/重做
@@ -165,48 +206,9 @@ export default class EditorCore {
             e.preventDefault();
             this.undo();
             break;
-          // 处理颜色选择
-          case "foreColor":
-          case "hiliteColor":
-            // 创建颜色选择器弹窗
-            const colorPicker = document.createElement("input");
-            colorPicker.type = "color";
-            colorPicker.style.position = "absolute";
-            colorPicker.style.top = `${
-              (btn as HTMLElement).getBoundingClientRect().bottom +
-              window.scrollY
-            }px`;
-            colorPicker.style.left = `${
-              (btn as HTMLElement).getBoundingClientRect().left + window.scrollX
-            }px`;
-            colorPicker.style.zIndex = "9999";
-            colorPicker.value = "#000000";
-            document.body.appendChild(colorPicker);
-            colorPicker.focus();
-            colorPicker.click();
-            // 颜色变化时执行命令
-            colorPicker.addEventListener("change", () => {
-              this.restoreSelection({ forceFocus: true });
-              this.execCommand(cmd, colorPicker.value);
-              document.body.removeChild(colorPicker);
-            });
-            // 点击外部关闭
-            const handleClickOutside = (ev: MouseEvent) => {
-              if (!colorPicker.contains(ev.target as Node)) {
-                if (document.body.contains(colorPicker)) {
-                  document.body.removeChild(colorPicker);
-                }
-              }
-            };
-            setTimeout(() =>
-              document.addEventListener("click", handleClickOutside, {
-                once: true,
-              })
-            );
-            break;
         }
         if (cmd) {
-          this.execCommand(cmd, value);
+          this.execCommand(cmd);
         }
       });
     });
@@ -244,6 +246,64 @@ export default class EditorCore {
     // 初始化时保存初始状态
     this.saveHistoryState(editorContent.innerHTML);
   }
+  private clearNewLineStyles(): void {
+    const editorContent = this.container?.querySelector(".editor-content");
+    if (!editorContent) return;
+
+    editorContent.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) return;
+
+            const range = selection.getRangeAt(0);
+            range.deleteContents(); // 清除当前选区内容
+
+            // 创建无样式行
+            const newLine = document.createElement('div');
+            newLine.innerHTML = '<br>';
+
+            // 获取当前选区的起始节点
+            const container = range.startContainer;
+            
+            // 从文本节点的父节点开始查找（关键修改）
+            let blockParent: Node | null = container.nodeType === Node.TEXT_NODE 
+                ? container.parentNode // 从文本节点的父元素开始查找
+                : container as HTMLElement;
+
+            // 向上查找最近的块级元素
+            while (blockParent && !['DIV', 'P', 'SECTION'].includes((blockParent as HTMLElement).tagName)) {
+                blockParent = blockParent.parentNode;
+            }
+
+            // 如果找不到块级元素，则直接使用 editor-content 容器
+            if (!blockParent || !(blockParent instanceof HTMLElement)) {
+                blockParent = editorContent;
+            }
+
+            // 统一插入逻辑：确保插入到编辑器内容区域内
+            if (blockParent === editorContent) {
+                // 当前处于顶级容器时直接追加
+                blockParent.appendChild(newLine);
+            } else {
+                // 其他情况插入到同级位置
+                if (blockParent.parentNode) {
+                    blockParent.parentNode.insertBefore(newLine, blockParent.nextSibling);
+                }
+            }
+
+            // 调整光标到新行
+            range.setStartAfter(newLine);
+            range.setEndAfter(newLine);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            // 滚动到新行位置
+            newLine.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    });
+  }
   private debouncedSaveSelection = this.debounce(() => {
     this.saveSelection();
     console.log("选区变化，已保存当前范围", this.savedRange);
@@ -272,7 +332,9 @@ export default class EditorCore {
         const button = document.createElement("button");
         button.className = "btn";
         if (cmd === "insertTable") {
-          button.id = "insert-table-btn"; // 特殊添加 id
+          button.id = "insert-table-btn";
+        } else if (cmd === "fontSize") {
+          button.id = "font-size-btn";
         }
         button.dataset.cmd = cmd;
         // 直接插入 SVG 字符串

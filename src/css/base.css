@@ -14,6 +14,8 @@
     Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
+
+
 .toolbar {
   user-select: none;
   pointer-events: auto; /* 保证按钮可点击 */
@@ -157,4 +159,20 @@
 
 .font-size-dropdown-item:hover {
   background-color: #f0f0f0;
+}
+
+/** 颜色选择器÷ **/
+.color-picker {
+  display: none;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+.color-block {
+  width: 20px;
+  height: 20px;
+  margin: 2px;
+  cursor: pointer;
+  display: inline-block;
 }
