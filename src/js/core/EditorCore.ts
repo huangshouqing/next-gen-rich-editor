@@ -1,10 +1,3 @@
-// 定义模块接口
-// 导入样式
-import "@/css/base.css";
-import "@/css/dialog.css";
-import "@/css/toolbar.css";
-import "@/css/table.css";
-import "@/css/image.css";
 // 在文件顶部添加
 import HtmlToMarkdown from "@/js/modules/HtmlToMarkdown";
 import {
@@ -63,7 +56,7 @@ export default class EditorCore {
     if (this.container) {
       this.initNativeEditor(this.container);
     }
-    this.clearNewLineStyles();
+    this._keyEnter();
   }
 
   private initModules(): void {
@@ -157,9 +150,7 @@ export default class EditorCore {
             break;
           case "clear":
             e.preventDefault();
-            if (confirm("确定要清空内容吗？")) {
-              this.clearContent();
-            }
+            this.clearContent();
             break;
           case "insertSample":
             e.preventDefault();
@@ -246,62 +237,71 @@ export default class EditorCore {
     // 初始化时保存初始状态
     this.saveHistoryState(editorContent.innerHTML);
   }
-  private clearNewLineStyles(): void {
+  private _keyEnter(): void {
     const editorContent = this.container?.querySelector(".editor-content");
     if (!editorContent) return;
 
     editorContent.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
+      if (e.key === "Enter") {
+        e.preventDefault();
 
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0) return;
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
 
-            const range = selection.getRangeAt(0);
-            range.deleteContents(); // 清除当前选区内容
+        const range = selection.getRangeAt(0);
+        range.deleteContents(); // 清除当前选区内容
 
-            // 创建无样式行
-            const newLine = document.createElement('div');
-            newLine.innerHTML = '<br>';
+        // 创建无样式行
+        const newLine = document.createElement("div");
+        newLine.innerHTML = "<br>";
 
-            // 获取当前选区的起始节点
-            const container = range.startContainer;
-            
-            // 从文本节点的父节点开始查找（关键修改）
-            let blockParent: Node | null = container.nodeType === Node.TEXT_NODE 
-                ? container.parentNode // 从文本节点的父元素开始查找
-                : container as HTMLElement;
+        // 获取当前选区的起始节点
+        const container = range.startContainer;
 
-            // 向上查找最近的块级元素
-            while (blockParent && !['DIV', 'P', 'SECTION'].includes((blockParent as HTMLElement).tagName)) {
-                blockParent = blockParent.parentNode;
-            }
+        // 从文本节点的父节点开始查找（关键修改）
+        let blockParent: Node | null =
+          container.nodeType === Node.TEXT_NODE
+            ? container.parentNode // 从文本节点的父元素开始查找
+            : (container as HTMLElement);
 
-            // 如果找不到块级元素，则直接使用 editor-content 容器
-            if (!blockParent || !(blockParent instanceof HTMLElement)) {
-                blockParent = editorContent;
-            }
-
-            // 统一插入逻辑：确保插入到编辑器内容区域内
-            if (blockParent === editorContent) {
-                // 当前处于顶级容器时直接追加
-                blockParent.appendChild(newLine);
-            } else {
-                // 其他情况插入到同级位置
-                if (blockParent.parentNode) {
-                    blockParent.parentNode.insertBefore(newLine, blockParent.nextSibling);
-                }
-            }
-
-            // 调整光标到新行
-            range.setStartAfter(newLine);
-            range.setEndAfter(newLine);
-            selection.removeAllRanges();
-            selection.addRange(range);
-
-            // 滚动到新行位置
-            newLine.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // 向上查找最近的块级元素
+        while (
+          blockParent &&
+          !["DIV", "P", "SECTION"].includes(
+            (blockParent as HTMLElement).tagName
+          )
+        ) {
+          blockParent = blockParent.parentNode;
         }
+
+        // 如果找不到块级元素，则直接使用 editor-content 容器
+        if (!blockParent || !(blockParent instanceof HTMLElement)) {
+          blockParent = editorContent;
+        }
+
+        // 统一插入逻辑：确保插入到编辑器内容区域内
+        if (blockParent === editorContent) {
+          // 当前处于顶级容器时直接追加
+          blockParent.appendChild(newLine);
+        } else {
+          // 其他情况插入到同级位置
+          if (blockParent.parentNode) {
+            blockParent.parentNode.insertBefore(
+              newLine,
+              blockParent.nextSibling
+            );
+          }
+        }
+
+        // 调整光标到新行
+        range.setStartAfter(newLine);
+        range.setEndAfter(newLine);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        // 滚动到新行位置
+        newLine.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     });
   }
   private debouncedSaveSelection = this.debounce(() => {

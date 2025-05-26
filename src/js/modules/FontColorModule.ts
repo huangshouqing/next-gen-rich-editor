@@ -89,7 +89,8 @@ export default class FontColorModule {
     const rect = btn.getBoundingClientRect();
     this.colorPicker.style.top = `${rect.bottom + window.scrollY}px`;
     this.colorPicker.style.left = `${rect.left + window.scrollX}px`;
-    this.colorPicker.style.display = "block";
+    this.colorPicker.style.display = "flex";
+    this.colorPicker.style.flexWrap = "wrap";
     console.log("Color picker displayed at:", {
       top: this.colorPicker.style.top,
       left: this.colorPicker.style.left,
