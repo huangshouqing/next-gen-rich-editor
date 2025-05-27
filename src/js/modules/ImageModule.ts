@@ -13,7 +13,18 @@ export default class ImageModule {
   constructor(editor: EditorCore) {
     this.editor = editor;
   }
-
+  /**
+   * 初始化图片点击事件监听
+   */
+  public register() {
+    const editorContent =
+      this.editor.container?.querySelector(".editor-content");
+    if (editorContent) {
+      this.initImageEvents(editorContent);
+    } else {
+      console.warn("编辑器内容区域未找到，无法初始化图片事件");
+    }
+  }
   /**
    * 打开图片插入弹窗
    */
@@ -258,18 +269,7 @@ export default class ImageModule {
       }
     }, 0);
   }
-  /**
-   * 初始化图片点击事件监听
-   */
-  public init() {
-    const editorContent =
-      this.editor.container?.querySelector(".editor-content");
-    if (editorContent) {
-      this.initImageEvents(editorContent);
-    } else {
-      console.warn("编辑器内容区域未找到，无法初始化图片事件");
-    }
-  }
+
   private initImageEvents(editorContent: Element): void {
     editorContent.addEventListener("click", (e) => {
       const target = e.target as HTMLElement;

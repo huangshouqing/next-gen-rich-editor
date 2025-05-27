@@ -8,8 +8,10 @@ export default class BackgroundColorModule {
   constructor(editor: EditorCore) {
     this.editor = editor;
   }
-
-  public init(): void {
+  /**
+   * 注册实例
+   */
+  public register(): void {
     if (!this.colorPicker) {
       this.createColorPicker();
     }
@@ -56,7 +58,6 @@ export default class BackgroundColorModule {
       colorBlock.className = "color-block";
       colorBlock.style.backgroundColor = color;
       colorBlock.addEventListener("click", () => {
-        this.editor.restoreSelection({ forceFocus: true });
         // 执行背景颜色命令
         this.editor.execCommand("hiliteColor", color);
         this.hideColorPicker();
@@ -64,7 +65,6 @@ export default class BackgroundColorModule {
       this.colorPicker?.appendChild(colorBlock);
     });
     document.body.appendChild(this.colorPicker);
-
     // 添加失焦事件监听
     this.colorPicker.addEventListener("blur", () => {
       this.hideColorPicker();

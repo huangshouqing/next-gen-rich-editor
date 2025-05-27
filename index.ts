@@ -7,6 +7,7 @@ import {
   FontSizeModule,
   FontColorModule,
   BackgroundColorModule,
+  ClearFormatModule,
 } from "./src/main";
 new RichEditor("#editor", {
   toolbar: [
@@ -18,7 +19,7 @@ new RichEditor("#editor", {
     ["insertTable", "createLink", "insertImage"],
     ["foreColor", "hiliteColor"],
     ["undo", "redo"],
-    ["clear", "insertSample", "toMarkdown"],
+    ["clear", "insertSample", "toMarkdown", "clearFormat"],
   ],
   modules: [
     TableModule,
@@ -26,5 +27,7 @@ new RichEditor("#editor", {
     LinkModule,
     FontSizeModule,
     FontColorModule,
-    BackgroundColorModule,],
+    BackgroundColorModule,
+    ClearFormatModule,
+  ],
 });

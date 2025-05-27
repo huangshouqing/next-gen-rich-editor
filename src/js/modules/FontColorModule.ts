@@ -7,8 +7,10 @@ export default class FontColorModule {
   constructor(editor: EditorCore) {
     this.editor = editor;
   }
-
-  public init(): void {
+  /**
+   * 注册实例
+   */
+  public register(): void {
     if (!this.colorPicker) {
       this.createColorPicker();
     }
@@ -16,12 +18,10 @@ export default class FontColorModule {
 
   private createColorPicker(): void {
     if (this.colorPicker) return; // 防止重复创建
-
     this.colorPicker = document.createElement("div");
     this.colorPicker.className = "color-picker";
     this.colorPicker.style.position = "absolute";
     this.colorPicker.style.zIndex = "9999";
-
     // 修改颜色数组，扩展至24种常用颜色，覆盖多个色系
     const colors = [
       // 红色系
@@ -64,9 +64,6 @@ export default class FontColorModule {
       colorBlock.className = "color-block";
       colorBlock.style.backgroundColor = color;
       colorBlock.addEventListener("click", () => {
-        // 确保选区已保存
-        this.editor.restoreSelection({ forceFocus: true });
-        // 执行命令
         this.editor.execCommand("foreColor", color);
         // 隐藏颜色选择器
         this.hideColorPicker();
@@ -74,7 +71,6 @@ export default class FontColorModule {
       this.colorPicker?.appendChild(colorBlock);
     });
     document.body.appendChild(this.colorPicker);
-
     // 添加失焦事件监听
     this.colorPicker.addEventListener("blur", () => {
       this.hideColorPicker();
@@ -91,10 +87,6 @@ export default class FontColorModule {
     this.colorPicker.style.left = `${rect.left + window.scrollX}px`;
     this.colorPicker.style.display = "flex";
     this.colorPicker.style.flexWrap = "wrap";
-    console.log("Color picker displayed at:", {
-      top: this.colorPicker.style.top,
-      left: this.colorPicker.style.left,
-    });
   }
 
   public hideColorPicker(): void {

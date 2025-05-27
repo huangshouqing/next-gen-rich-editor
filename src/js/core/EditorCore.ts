@@ -7,10 +7,7 @@ import {
   type ToolbarConfig,
   commandIconMap,
 } from "./types";
-
-// 新增模块类：FontColorModule
-
-// 新增模块类：BackgroundColorModule
+import RichTextCommand from "../execcommand/richExeccommand";
 
 export default class EditorCore {
   // 选择器
@@ -21,7 +18,7 @@ export default class EditorCore {
   public container: HTMLElement | null;
   // 注册的模块
   private modules: ModuleConfig[];
-  private TableModule: EditorModuleInstance | null = null;
+  // 模块实例化
   private moduleInstances: Record<string, EditorModuleInstance> = {};
   // 保存选区
   public savedRange: any;
@@ -41,45 +38,47 @@ export default class EditorCore {
     ["insertTable", "createLink", "insertImage"],
     ["foreColor", "hiliteColor"],
     ["undo", "redo"],
-    ["clear", "insertSample", "toMarkdown"],
+    ["clear", "insertSample", "toMarkdown", "clearFormat"],
   ];
+  //
+  public commandInstance;
 
   constructor(
     selector: string,
     config: { modules: ModuleConfig[]; toolbar?: ToolbarConfig }
   ) {
+    this.commandInstance = RichTextCommand.getInstance({
+      editor: this,
+      doc: document,
+    });
     this.selector = selector;
     this.config = config;
     this.container = document.querySelector(this.selector);
     this.modules = config.modules;
-    this.initModules();
     if (this.container) {
       this.initNativeEditor(this.container);
+    } else {
+      console.error(`Element with selector ${this.selector} not found.`);
+      return;
     }
+    this.registerModules();
   }
 
-  private initModules(): void {
+  /**
+   * 注册模块
+   */
+  private registerModules(): void {
     this.modules.forEach((moduleClass) => {
+      // 初始化模块
       const instance = new moduleClass(this);
       const moduleName: string = instance.name || moduleClass.name;
+      // 挂载 editor 实例
       this.moduleInstances[moduleName] = instance;
-
-      // 初始化模块
-      if (
-        moduleName === "FontColorModule" ||
-        moduleName === "BackgroundColorModule"
-      ) {
-        instance.init?.();
-      }
-
-      if (moduleName === "TableModule") {
-        this.TableModule = instance;
-      }
+      // 实例注册（如果有注册方法）
+      instance.register?.();
     });
   }
-  public execCommand(cmd: string, value: string | null = null): void {
-    document.execCommand(cmd, false, value || undefined);
-  }
+
   private _bindEvents(): void {
     if (!this.container) return;
     this.toobarChangeHandler();
@@ -119,7 +118,7 @@ export default class EditorCore {
           // 处理字体大小选择
           case "fontSize":
             if (this.moduleInstances["FontSizeModule"]) {
-              this.moduleInstances["FontSizeModule"].init?.();
+              this.moduleInstances["FontSizeModule"].createFontSizeSelect?.();
             } else {
               console.warn("FontSizeModule 模块未注入，请检查配置。");
             }
@@ -142,7 +141,6 @@ export default class EditorCore {
           case "insertImage":
             if (this.moduleInstances["ImageModule"]) {
               this.moduleInstances["ImageModule"].openDialog();
-              this.moduleInstances["ImageModule"].init();
             } else {
               console.warn("ImageModule 模块未注入，请检查配置。");
             }
@@ -187,6 +185,14 @@ export default class EditorCore {
               `);
             }
             break;
+          case "clearFormat":
+            e.preventDefault();
+            if (this.moduleInstances["ClearFormatModule"]) {
+              this.moduleInstances["ClearFormatModule"].clearFormat?.(); // 调用模块方法
+            } else {
+              console.warn("ClearFormatModule 模块未注入，请检查配置。");
+            }
+            break;
           // 处理撤销/重做
           case "redo":
             e.preventDefault();
@@ -196,9 +202,11 @@ export default class EditorCore {
             e.preventDefault();
             this.undo();
             break;
-        }
-        if (cmd) {
-          this.execCommand(cmd);
+          default:
+            if (cmd) {
+              this.execCommand(cmd, value);
+            }
+            break;
         }
       });
     });
@@ -290,6 +298,10 @@ export default class EditorCore {
     const editorContent = document.createElement("div");
     editorContent.className = "editor-content";
     editorContent.contentEditable = "true"; // 仅此处允许输入
+    const p = document.createElement("div");
+    const br = document.createElement("br"); // 新增: 创建 br 元素
+    p.appendChild(br); // 新增: 将 br 添加到 p 中
+    editorContent?.appendChild(p);
     container.appendChild(toolbar); // 创建工具栏
     container.appendChild(editorContent); // 创建可编辑区域
     parentContainer.appendChild(container); //  添加到父容器（用户提供的 dom）中
@@ -311,6 +323,7 @@ export default class EditorCore {
     selection?.removeAllRanges();
     selection?.addRange(this.savedRange.cloneRange());
     if (options.forceFocus) {
+      debugger;
       const editorContent = this.container?.querySelector(".editor-content");
       editorContent?.focus();
     }
@@ -531,5 +544,19 @@ export default class EditorCore {
   public setMarkdown(markdown: string): void {
     // TODO: 可以在此处实现 Markdown 解析器来设置内容
     console.warn("Markdown 到 HTML 的转换尚未实现");
+  }
+
+  /**
+   * execcommand 指令
+   * @param cmd
+   * @param value
+   */
+  public execCommand(cmd: string, value: string | null = null): void {
+    // document.execCommand(cmd, false, value || undefined);
+    // todo 替换为封装的原生 execCommand
+    this.commandInstance.execCommand(cmd, false, value || undefined);
+  }
+  private getContentElement() {
+    return this.container;
   }
 }
