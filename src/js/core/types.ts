@@ -94,3 +94,47 @@ export const commandIconMap: Record<string, string> = {
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8v11c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h10l5 5z"/></svg>',
   fontSize: `<svg t="1748183628281" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5697" width="18" height="18"><path d="M341.333333 213.333333a42.666667 42.666667 0 0 1 39.381334 26.24l213.333333 512a42.666667 42.666667 0 1 1-78.762667 32.853334L341.333333 366.933333l-173.952 417.493334a42.666667 42.666667 0 0 1-78.762666-32.853334l213.333333-512A42.666667 42.666667 0 0 1 341.333333 213.333333z" fill="#14181F" p-id="5698"></path><path d="M170.666667 597.333333a42.666667 42.666667 0 0 1 42.666666-42.666666h256a42.666667 42.666667 0 1 1 0 85.333333H213.333333a42.666667 42.666667 0 0 1-42.666666-42.666667zM896 469.333333a42.666667 42.666667 0 0 1 42.666667 42.666667v256a42.666667 42.666667 0 1 1-85.333334 0v-256a42.666667 42.666667 0 0 1 42.666667-42.666667z" fill="#14181F" p-id="5699"></path><path d="M768 554.666667a85.333333 85.333333 0 1 0 0 170.666666 85.333333 85.333333 0 0 0 0-170.666666z m-170.666667 85.333333a170.666667 170.666667 0 1 1 341.333334 0 170.666667 170.666667 0 0 1-341.333334 0z" fill="#14181F" p-id="5700"></path></svg>`,
 };
+
+export enum ToolbarActions {
+  SELECTION,
+  LINK,
+  IMAGE,
+  COLOR,
+  ALIGNMENT,
+  LIST,
+  FONT_SIZE,
+  BACKGROUND_COLOR,
+}
+
+export enum ImageSize {
+  SMALL = "25%",
+  MEDIUM = "50%",
+  LARGE = "75%",
+  ORIGINAL = "100%",
+}
+
+export enum ImageAlign {
+  STANDARD,
+  START,
+}
+
+export enum ContentAlign {
+  LEFT = "left",
+  CENTER = "center",
+  RIGHT = "right",
+}
+
+export enum ContentList {
+  ORDERED = "insertOrderedList",
+  UNORDERED = "insertUnorderedList",
+}
+
+export enum FontSize {
+  X_SMALL = "1",
+  SMALL = "2",
+  MEDIUM = "3",
+  LARGE = "4",
+  X_LARGE = "5",
+  XX_LARGE = "6",
+  XXX_LARGE = "7",
+}

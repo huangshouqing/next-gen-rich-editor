@@ -56,7 +56,7 @@ export default class EditorCore {
     if (this.container) {
       this.initNativeEditor(this.container);
     }
-    this._keyEnter();
+    // this._keyEnter();
   }
 
   private initModules(): void {
