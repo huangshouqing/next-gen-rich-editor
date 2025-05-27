@@ -56,7 +56,6 @@ export default class EditorCore {
     if (this.container) {
       this.initNativeEditor(this.container);
     }
-    // this._keyEnter();
   }
 
   private initModules(): void {
@@ -236,73 +235,6 @@ export default class EditorCore {
     });
     // 初始化时保存初始状态
     this.saveHistoryState(editorContent.innerHTML);
-  }
-  private _keyEnter(): void {
-    const editorContent = this.container?.querySelector(".editor-content");
-    if (!editorContent) return;
-
-    editorContent.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) return;
-
-        const range = selection.getRangeAt(0);
-        range.deleteContents(); // 清除当前选区内容
-
-        // 创建无样式行
-        const newLine = document.createElement("div");
-        newLine.innerHTML = "<br>";
-
-        // 获取当前选区的起始节点
-        const container = range.startContainer;
-
-        // 从文本节点的父节点开始查找（关键修改）
-        let blockParent: Node | null =
-          container.nodeType === Node.TEXT_NODE
-            ? container.parentNode // 从文本节点的父元素开始查找
-            : (container as HTMLElement);
-
-        // 向上查找最近的块级元素
-        while (
-          blockParent &&
-          !["DIV", "P", "SECTION"].includes(
-            (blockParent as HTMLElement).tagName
-          )
-        ) {
-          blockParent = blockParent.parentNode;
-        }
-
-        // 如果找不到块级元素，则直接使用 editor-content 容器
-        if (!blockParent || !(blockParent instanceof HTMLElement)) {
-          blockParent = editorContent;
-        }
-
-        // 统一插入逻辑：确保插入到编辑器内容区域内
-        if (blockParent === editorContent) {
-          // 当前处于顶级容器时直接追加
-          blockParent.appendChild(newLine);
-        } else {
-          // 其他情况插入到同级位置
-          if (blockParent.parentNode) {
-            blockParent.parentNode.insertBefore(
-              newLine,
-              blockParent.nextSibling
-            );
-          }
-        }
-
-        // 调整光标到新行
-        range.setStartAfter(newLine);
-        range.setEndAfter(newLine);
-        selection.removeAllRanges();
-        selection.addRange(range);
-
-        // 滚动到新行位置
-        newLine.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    });
   }
   private debouncedSaveSelection = this.debounce(() => {
     this.saveSelection();
