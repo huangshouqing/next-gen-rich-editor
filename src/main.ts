@@ -7,7 +7,6 @@ import LinkModule from "@/js/modules/LinkModule";
 import FontSizeModule from "@/js/modules/FontSizeModule";
 import FontColorModule from "@/js/modules/FontColorModule";
 import BackgroundColorModule from "./js/modules/BackgroundColorModule";
-import ClearFormatModule from "./js/modules/ClearFormatModule";
 // 导入样式
 import "@/css/base.css";
 import "@/css/dialog.css";
@@ -23,5 +22,4 @@ export {
   FontSizeModule,
   FontColorModule,
   BackgroundColorModule,
-  ClearFormatModule
 };

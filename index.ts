@@ -7,7 +7,6 @@ import {
   FontSizeModule,
   FontColorModule,
   BackgroundColorModule,
-  ClearFormatModule,
 } from "./src/main";
 new RichEditor("#editor", {
   toolbar: [
@@ -28,6 +27,5 @@ new RichEditor("#editor", {
     FontSizeModule,
     FontColorModule,
     BackgroundColorModule,
-    ClearFormatModule,
   ],
 });

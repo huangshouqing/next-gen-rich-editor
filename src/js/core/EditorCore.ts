@@ -16,6 +16,8 @@ export default class EditorCore {
   private config: EditorConfig;
   //
   public container: HTMLElement | null;
+  // 编辑区元素
+  public root: HTMLElement | null;
   // 注册的模块
   private modules: ModuleConfig[];
   // 模块实例化
@@ -23,6 +25,7 @@ export default class EditorCore {
   // 保存选区
   public savedRange: any;
   public selection: any;
+  selections = { index: 0, length: 0 };
   // 历史
   private history: string[] = [];
   private historyPointer: number = -1;
@@ -97,6 +100,7 @@ export default class EditorCore {
         const cmd = (btn as HTMLElement).dataset.cmd;
         let value: string | null = null;
         switch (cmd) {
+          // 字体颜色
           case "foreColor":
             if (this.moduleInstances["FontColorModule"]) {
               this.moduleInstances["FontColorModule"].showColorPicker?.(
@@ -106,6 +110,7 @@ export default class EditorCore {
               console.warn("FontColorModule 模块未注入，请检查配置。");
             }
             break;
+          // 背景颜色
           case "hiliteColor":
             if (this.moduleInstances["BackgroundColorModule"]) {
               this.moduleInstances["BackgroundColorModule"].showColorPicker?.(
@@ -128,7 +133,9 @@ export default class EditorCore {
               `请输入${cmd === "createLink" ? "链接地址" : "图片地址"}`
             );
             if (!value) return;
+            this.execCommand(cmd, value);
             break;
+          //  表格
           case "insertTable":
             if (this.moduleInstances["TableModule"]) {
               this.moduleInstances["TableModule"].openGridSelector?.();
@@ -145,6 +152,7 @@ export default class EditorCore {
               console.warn("ImageModule 模块未注入，请检查配置。");
             }
             break;
+          // 清除内容
           case "clear":
             e.preventDefault();
             this.clearContent();
@@ -185,14 +193,6 @@ export default class EditorCore {
               `);
             }
             break;
-          case "clearFormat":
-            e.preventDefault();
-            if (this.moduleInstances["ClearFormatModule"]) {
-              this.moduleInstances["ClearFormatModule"].clearFormat?.(); // 调用模块方法
-            } else {
-              console.warn("ClearFormatModule 模块未注入，请检查配置。");
-            }
-            break;
           // 处理撤销/重做
           case "redo":
             e.preventDefault();
@@ -216,15 +216,16 @@ export default class EditorCore {
    */
   private selectionChangeHandler() {
     document.addEventListener("selectionchange", () => {
-      const editorContent = this.container?.querySelector(".editor-content");
+      // const editorContent = this.container?.querySelector(".editor-content");
       const selection = window.getSelection();
-      if (!editorContent || !selection || selection.rangeCount === 0) return;
+      if (!this.root || !selection || selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
-      if (editorContent.contains(range.commonAncestorContainer)) {
+      if (this.root.contains(range.commonAncestorContainer)) {
         this.debouncedSaveSelection();
       }
     });
   }
+
   /**
    * 监听内容变化并保存到历史记录
    */
@@ -305,6 +306,7 @@ export default class EditorCore {
     container.appendChild(toolbar); // 创建工具栏
     container.appendChild(editorContent); // 创建可编辑区域
     parentContainer.appendChild(container); //  添加到父容器（用户提供的 dom）中
+    this.root = this.container?.querySelector(".editor-content");
     this._bindEvents(); // 绑定事件
   }
   public restoreSelection(
@@ -324,8 +326,8 @@ export default class EditorCore {
     selection?.addRange(this.savedRange.cloneRange());
     if (options.forceFocus) {
       debugger;
-      const editorContent = this.container?.querySelector(".editor-content");
-      editorContent?.focus();
+      // const editorContent = this.container?.querySelector(".editor-content");
+      this.root?.focus();
     }
   }
   public saveSelection(): void {
@@ -355,15 +357,15 @@ export default class EditorCore {
    * 执行撤销操作
    */
   public undo(): void {
-    if (this.historyPointer <= 0) return;
+    if (this.historyPointer <= 0 || !this.root) return;
 
     this.isProcessing = true;
     this.historyPointer--;
 
-    const editorContent = this.container?.querySelector(
-      ".editor-content"
-    ) as HTMLElement;
-    editorContent.innerHTML = this.history[this.historyPointer];
+    // const editorContent = this.container?.querySelector(
+    //   ".editor-content"
+    // ) as HTMLElement;
+    this.root.innerHTML = this.history[this.historyPointer];
 
     // 恢复选区
     this.restoreSelection({ forceFocus: true });
@@ -374,15 +376,15 @@ export default class EditorCore {
    * 执行重做操作
    */
   public redo(): void {
-    if (this.historyPointer >= this.history.length - 1) return;
+    if (this.historyPointer >= this.history.length - 1 || !this.root) return;
 
     this.isProcessing = true;
     this.historyPointer++;
 
-    const editorContent = this.container?.querySelector(
-      ".editor-content"
-    ) as HTMLElement;
-    editorContent.innerHTML = this.history[this.historyPointer];
+    // const editorContent = this.container?.querySelector(
+    //   ".editor-content"
+    // ) as HTMLElement;
+    this.root.innerHTML = this.history[this.historyPointer];
 
     // 恢复选区
     this.restoreSelection({ forceFocus: true });
@@ -394,12 +396,12 @@ export default class EditorCore {
    * 获取编辑器当前内容（HTML）
    */
   public getContent(): string {
-    if (!this.container) return "";
+    if (!this.container || !this.root) return "";
 
-    const editorContent = this.container.querySelector(
-      ".editor-content"
-    ) as HTMLElement;
-    return editorContent.innerHTML.trim();
+    // const editorContent = this.container.querySelector(
+    //   ".editor-content"
+    // ) as HTMLElement;
+    return this.root.innerHTML.trim();
   }
 
   /**
@@ -407,12 +409,12 @@ export default class EditorCore {
    * @param content - 要写入的 HTML 内容
    */
   public setContent(content: string): void {
-    if (!this.container) return;
+    if (!this.container || !this.root) return;
 
-    const editorContent = this.container.querySelector(
-      ".editor-content"
-    ) as HTMLElement;
-    editorContent.innerHTML = content;
+    // const editorContent = this.container.querySelector(
+    //   ".editor-content"
+    // ) as HTMLElement;
+    this.root.innerHTML = content;
 
     // 保存初始状态到历史记录
     this.saveHistoryState(content);
@@ -422,12 +424,12 @@ export default class EditorCore {
    * 获取纯文本内容
    */
   public getPlainText(): string {
-    if (!this.container) return "";
+    if (!this.container || !this.root) return "";
 
-    const editorContent = this.container.querySelector(
-      ".editor-content"
-    ) as HTMLElement;
-    return editorContent.innerText;
+    // const editorContent = this.container.querySelector(
+    //   ".editor-content"
+    // ) as HTMLElement;
+    return this.root.innerText;
   }
 
   /**
@@ -462,7 +464,7 @@ export default class EditorCore {
    * @param html - 新的 HTML 内容
    */
   public replaceSelection(html: string): void {
-    if (!this.container) return;
+    if (!this.container || !this.root) return;
 
     this.restoreSelection({ forceFocus: true });
 
@@ -487,10 +489,10 @@ export default class EditorCore {
       selection?.addRange(range);
 
       // 触发内容变化事件以更新历史记录
-      const editorContent = this.container.querySelector(
-        ".editor-content"
-      ) as HTMLElement;
-      this.saveHistoryState(editorContent.innerHTML);
+      // const editorContent = this.container.querySelector(
+      //   ".editor-content"
+      // ) as HTMLElement;
+      this.saveHistoryState(this.root.innerHTML);
     }
   }
 
@@ -516,12 +518,12 @@ export default class EditorCore {
    * 清空编辑器内容
    */
   public clearContent(): void {
-    if (!this.container) return;
+    if (!this.container || !this.root) return;
 
-    const editorContent = this.container.querySelector(
-      ".editor-content"
-    ) as HTMLElement;
-    editorContent.innerHTML = "";
+    // const editorContent = this.container.querySelector(
+    //   ".editor-content"
+    // ) as HTMLElement;
+    this.root.innerHTML = "";
 
     // 重置历史记录
     this.history = [];
@@ -529,12 +531,12 @@ export default class EditorCore {
   }
 
   public getMarkdown(): string {
-    if (!this.container) return "";
+    if (!this.container || !this.root) return "";
 
-    const editorContent = this.container.querySelector(
-      ".editor-content"
-    ) as HTMLElement;
-    return this.htmlToMarkdownConverter.convert(editorContent.innerHTML);
+    // const editorContent = this.container.querySelector(
+    //   ".editor-content"
+    // ) as HTMLElement;
+    return this.htmlToMarkdownConverter.convert(this.root.innerHTML);
   }
 
   /**
@@ -552,7 +554,6 @@ export default class EditorCore {
    * @param value
    */
   public execCommand(cmd: string, value: string | null = null): void {
-    // document.execCommand(cmd, false, value || undefined);
     // todo 替换为封装的原生 execCommand
     this.commandInstance.execCommand(cmd, false, value || undefined);
   }
