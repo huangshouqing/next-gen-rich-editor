@@ -1,6 +1,9 @@
 import EditorCore from "@/js/core/EditorCore";
 import "@/css/table.css";
 import ContextMenu from "@/js/modules/ContextMenu";
+import type { QuillModuleImpl } from "./QuillModule";
+import { cellId, Quill, rowId, TableCellBlot } from "./TableBlot";
+import { Delta } from "quill";
 interface EditorDialog {
   dialog: HTMLDivElement | null;
 }
@@ -9,10 +12,12 @@ export default class TableModule implements EditorDialog {
   public editor: EditorCore;
   public dialog: HTMLDivElement | null;
   private tableMenus = new Map<HTMLElement, ContextMenu>();
+  public quill;
 
   constructor(editor: EditorCore) {
     this.editor = editor;
     this.dialog = null;
+    this.quill = editor.quillInstance.quill;
   }
   /**
    * 打开网格选择器弹窗
@@ -159,40 +164,72 @@ export default class TableModule implements EditorDialog {
    * @param rows 行数
    * @param cols 列数
    */
-  public insertTable(rows: number, cols: number): void {
-    const table = document.createElement("table");
-    for (let i = 0; i < rows; i++) {
-      const tr = table.insertRow();
-      for (let j = 0; j < cols; j++) {
-        const td = tr.insertCell();
-        td.innerHTML = "&nbsp;";
-      }
-    }
-    const editorContent =
-      this.editor.container?.querySelector(".editor-content");
-    if (!editorContent) {
-      console.error("无法找到 .editor-content 元素");
+  insertTable(rows: number, columns: number) {
+    const range = this.quill.getSelection(true);
+    if (range == null) return;
+    let currentBlot = this.quill.getLeaf(range.index)[0];
+    let delta = new Delta().retain(range.index);
+
+    if (this.isInTableCell(currentBlot)) {
+      console.warn(`Can not insert table into a table cell.`);
       return;
     }
-    // 确保编辑区域有焦点
-    editorContent.focus();
-    this.editor.restoreSelection();
-    // 创建 Range 并插入表格
-    const selection = window.getSelection();
-    const range = selection?.getRangeAt(0);
-    if (range) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(table.outerHTML, "text/html");
-      const parsedTable = doc.body.firstChild as HTMLElement;
-      range.insertNode(parsedTable); // 插入表格节点
-    } else {
-      editorContent.appendChild(table); // 默认追加到最后
-    }
-    // 新增失焦监听清空选中 cell 效果
-    table.addEventListener("focusout", (e) => {
-      this._clearCellSelection(table);
-    });
+
+    delta.insert("\n");
+    // insert table column
+    delta = new Array(columns).fill("\n").reduce((memo, text) => {
+      memo.insert(text, { "table-col": true });
+      return memo;
+    }, delta);
+    // insert table cell line with empty line
+    delta = new Array(rows).fill(0).reduce((memo) => {
+      let tableRowId = rowId();
+      return new Array(columns).fill("\n").reduce((memo, text) => {
+        memo.insert(text, {
+          "table-cell-line": { row: tableRowId, cell: cellId() },
+        });
+        return memo;
+      }, memo);
+    }, delta);
+
+    this.quill.updateContents(delta, Quill.sources.USER);
+    this.quill.setSelection(range.index + columns + 1, Quill.sources.API);
   }
+  // public insertTable(rows: number, cols: number): void {
+  //   const table = document.createElement("table");
+  //   for (let i = 0; i < rows; i++) {
+  //     const tr = table.insertRow();
+  //     for (let j = 0; j < cols; j++) {
+  //       const td = tr.insertCell();
+  //       td.innerHTML = "&nbsp;";
+  //     }
+  //   }
+  //   const editorContent =
+  //     this.editor.container?.querySelector(".editor-content");
+  //   if (!editorContent) {
+  //     console.error("无法找到 .editor-content 元素");
+  //     return;
+  //   }
+  //   // 确保编辑区域有焦点
+  //   editorContent.focus();
+  //   this.editor.restoreSelection();
+  //   // 创建 Range 并插入表格
+  //   const selection = window.getSelection();
+  //   const range = selection?.getRangeAt(0);
+  //   if (range) {
+  //     const parser = new DOMParser();
+  //     const doc = parser.parseFromString(table.outerHTML, "text/html");
+  //     const parsedTable = doc.body.firstChild as HTMLElement;
+  //     range.insertNode(parsedTable); // 插入表格节点
+  //     debugger
+  //   } else {
+  //     editorContent.appendChild(table); // 默认追加到最后
+  //   }
+  //   // 新增失焦监听清空选中 cell 效果
+  //   table.addEventListener("focusout", (e) => {
+  //     this._clearCellSelection(table);
+  //   });
+  // }
 
   /**
    * 初始化右键菜单功能
@@ -326,8 +363,8 @@ export default class TableModule implements EditorDialog {
     }
   }
   /**
-   * 
-   * @param table 
+   *
+   * @param table
    */
   private _clearCellSelection(table?: HTMLTableElement): void {
     // 支持全局清除
@@ -546,5 +583,16 @@ export default class TableModule implements EditorDialog {
     colorPicker.addEventListener("blur", () => {
       document.body.removeChild(colorPicker);
     });
+  }
+  isTableCell(blot) {
+    return blot.statics.blotName === TableCellBlot.blotName;
+  }
+
+  isInTableCell(current) {
+    return current && current.parent
+      ? this.isTableCell(current.parent)
+        ? true
+        : this.isInTableCell(current.parent)
+      : false;
   }
 }

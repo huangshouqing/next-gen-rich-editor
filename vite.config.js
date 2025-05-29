@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import path from "path";
+import sass from "sass";
 
 export default defineConfig(({ mode }) => {
   const isProduction = mode === "production";
@@ -36,5 +37,18 @@ export default defineConfig(({ mode }) => {
       },
       extensions: [".js", ".ts", ".vue", ".json"],
     },
+    plugins: [
+      {
+        name: "sass",
+        transform: (id) => {
+          if (id.endsWith(".scss")) {
+            return {
+              code: sass.compile(id).css.toString(),
+              map: null, // 提供 source map
+            };
+          }
+        },
+      },
+    ],
   };
 });

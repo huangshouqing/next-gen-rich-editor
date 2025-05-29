@@ -139,12 +139,13 @@ export default class EditorCore {
             break;
           //  表格
           case "insertTable":
-            if (this.moduleInstances["TableModule"]) {
-              this.moduleInstances["TableModule"].openGridSelector?.();
-              this.moduleInstances["TableModule"].initRightClickMenu?.();
-            } else {
-              console.warn("TableModule 模块未注入，请检查配置。");
-            }
+            // if (this.moduleInstances["TableModule"]) {
+            //   this.moduleInstances["TableModule"].openGridSelector?.();
+            //   this.moduleInstances["TableModule"].initRightClickMenu?.();
+            // } else {
+            //   console.warn("TableModule 模块未注入，请检查配置。");
+            // }
+            this.quillInstance?.quill.getModule('better-table').insertTable(3, 3);
             break;
           // 插入图片
           case "insertImage":

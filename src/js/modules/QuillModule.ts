@@ -1,8 +1,20 @@
-import Quill from "quill";
+import { Quill } from "./TableBlot.ts";
 // 使用 Quill 官方 CSS
 import "../../css/quill.snow.css";
 // 引入字体大小 css
 import "../../css/quill-styles.css";
+
+import QuillBetterTable from "./quill-beter-table/quill-better-table.js";
+// import better-table styles file
+import "./quill-beter-table/assets/quill-better-table.scss";
+
+Quill.register(
+  {
+    "modules/better-table": QuillBetterTable,
+  },
+  true
+);
+
 export interface QuillModule {
   execCommand(command: string, value?: any): void;
 }
@@ -57,7 +69,33 @@ export class QuillModuleImpl implements QuillModule {
       theme: "snow",
       modules: {
         toolbar: false,
+        "better-table": {
+          operationMenu: {
+            items: {
+              unmergeCells: {
+                text: "Another unmerge cells name",
+              },
+            },
+
+            color: {
+              colors: [
+                "red",
+                "green",
+                "yellow",
+                "white",
+                "red",
+                "green",
+                "yellow",
+                "white",
+              ],
+            },
+          },
+        },
+        keyboard: {
+          bindings: QuillBetterTable.keyboardBindings,
+        },
       },
+
       // 其他配置...
     });
 
