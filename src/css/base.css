@@ -43,8 +43,8 @@
 }
 
 .editor-content {
-  min-height: 100px;
-  padding: 20px;
+  /* min-height: 100px; */
+  /* padding: 20px; */
   font-size: 16px;
   line-height: 1.6;
   color: #333;

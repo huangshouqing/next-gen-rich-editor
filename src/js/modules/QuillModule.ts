@@ -1,0 +1,274 @@
+import Quill from "quill";
+// 使用 Quill 官方 CSS
+import "../../css/quill.snow.css";
+
+export interface QuillModule {
+  execCommand(command: string, value?: any): void;
+}
+
+export class QuillModuleImpl implements QuillModule {
+  private quill: Quill;
+
+  // 命令映射表：将用户自定义命令映射到 Quill 命令
+  private commandMap: Record<string, string> = {
+    // 格式相关
+    bold: "bold",
+    italic: "italic",
+    underline: "underline",
+    strikeThrough: "strike",
+
+    // 对齐方式
+    justifyLeft: "align-left",
+    justifyCenter: "align-center",
+    justifyRight: "align-right",
+    justifyFull: "align-justify",
+
+    // 列表
+    insertUnorderedList: "list-bullet",
+    insertOrderedList: "list-ordered",
+
+    // 缩进
+    indent: "indent-increase",
+    outdent: "indent-decrease",
+
+    // 字体大小
+    fontSize: "size",
+    // 字体颜色
+    foreColor: "color",
+    // 背景颜色
+    hiliteColor: "background",
+    // 操作
+    undo: "undo",
+    redo: "redo",
+    // 上标/下标
+    subscript: "script-sub",
+    superscript: "script-super",
+    // 其他格式
+    clearFormat: "removeFormat",
+  };
+
+  constructor(editor: HTMLElement) {
+    let FontSize = Quill.import("formats/size");
+    FontSize.whitelist = [
+      "10",
+      "12",
+      "14",
+      "16", 
+      "18",
+      "24",
+      "32",
+    ];
+    Quill.register(FontSize, true);
+    // 初始化 Quill 编辑器配置
+    this.quill = new Quill(editor, {
+      theme: "snow",
+      modules: {
+        toolbar: false,
+      },
+      // 其他配置...
+    });
+
+    // 强制清理多余 DOM 结构
+    this.cleanupContainer(editor);
+
+    // 添加：设置编辑区域内边距
+    const quillEditor = editor.querySelector<HTMLElement>(".ql-editor");
+    if (quillEditor) {
+      quillEditor.style.padding = "20px";
+    }
+
+    // 初始化内容
+    this.initialize();
+  }
+
+  /**
+   * 执行编辑命令
+   * @param command - 命令名称（支持用户自定义命名）
+   * @param value - 命令参数（如文本内容、链接地址）
+   */
+  execCommand(command: string, value?: any): void {
+    // 优先从映射表转换命令
+    const quillCommand = this.commandMap[command] || command;
+
+    switch (quillCommand) {
+      case "insertText":
+        this.quill.insertText(
+          this.quill.getSelection()?.index || 0,
+          value as string
+        );
+        break;
+      case "bold":
+      case "italic":
+      case "underline":
+        this.applyFormat(quillCommand, true);
+        break;
+      case "strike":
+      case "blockquote":
+      case "code-block":
+        this.applyFormat(quillCommand, true);
+        break;
+      case "size":
+      case "color":
+      case "background":
+        this.applyFormat(quillCommand, value);
+        break;
+      case "undo":
+        this.quill.history.undo();
+        break;
+      case "redo":
+        this.quill.history.redo();
+        break;
+      case "script-sub":
+        this.applyFormat("script", "sub");
+        break;
+      case "script-super":
+        this.applyFormat("script", "super");
+        break;
+      case "indent-increase":
+        this.quill.format("indent", "+1");
+        break;
+      case "indent-decrease":
+        this.quill.format("indent", "-1");
+        break;
+      case "direction-rtl":
+        this.applyFormat("direction", "rtl");
+        break;
+      case "align-left":
+        this.applyFormat("align", "");
+        break;
+      case "align-center":
+        this.applyFormat("align", "center");
+        break;
+      case "align-right":
+        this.applyFormat("align", "right");
+        break;
+      case "align-justify":
+        this.applyFormat("align", "justify");
+        break;
+
+      case "list-bullet":
+        this.applyFormat("list", "bullet");
+        break;
+      case "list-ordered":
+        this.applyFormat("list", "ordered");
+        break;
+
+      default:
+        console.warn(`Unknown command: ${quillCommand}`);
+    }
+  }
+
+  /**
+   * 应用文本格式
+   * @param format - 格式类型
+   * @param value - 格式值
+   */
+  private applyFormat(format: string, value: any): void {
+    const selection = this.quill.getSelection();
+    if (selection && selection.length > 0) {
+      // 文本格式处理
+      if (["bold", "italic", "underline", "strike"].includes(format)) {
+        // 如果是文本格式（如粗体、斜体），直接应用
+        // 检查当前选区是否已有该格式
+        const formatValue = this.quill.getFormat(
+          selection.index,
+          selection.length
+        )[format];
+        // 如果已有该格式，则移除；否则应用新值
+        this.quill.formatText(
+          selection.index,
+          selection.length,
+          format,
+          formatValue ? false : value
+        );
+      }
+      // 多段落格式处理
+      else if (
+        ["align", "list", "size", "color", "background", "script"].includes(
+          format
+        )
+      ) {
+        const [line, offset] = this.quill.getLine(selection.index);
+        let currentIndex = selection.index - offset;
+
+        while (currentIndex < selection.index + selection.length) {
+          const [currentLine, currentOffset] = this.quill.getLine(currentIndex);
+          if (currentLine) {
+            const lineLength = currentLine.length();
+
+            // 统一处理所有多段落格式
+            if (format === "list") {
+              // 列表格式特殊处理
+              // 检查当前行是否已有列表格式
+              const currentFormat = this.quill.getFormat(
+                currentIndex - currentOffset,
+                1
+              );
+              const currentList = currentFormat.list;
+
+              // 如果已有相同类型列表则移除，否则应用新格式
+              const newValue = currentList === value ? false : value;
+              this.quill.formatLine(
+                currentIndex - currentOffset,
+                1,
+                "list",
+                newValue
+              );
+            } else {
+              // 对字体大小进行格式验证
+              if (
+                format === "size" &&
+                typeof value === "string" &&
+                value.endsWith("px")
+              ) {
+                // 修正：移除 px 后缀并按 Quill 格式要求处理
+                const fontSizeValue = value.replace("px", "");
+                this.quill.formatText(
+                  currentIndex - currentOffset,
+                  lineLength,
+                  format,
+                  fontSizeValue
+                );
+              } else {
+                // 其他格式保持原处理方式
+                this.quill.formatText(
+                  currentIndex - currentOffset,
+                  lineLength,
+                  format,
+                  value
+                );
+              }
+            }
+          }
+          currentIndex += currentLine ? currentLine.length() : 1;
+        }
+      }
+      // 其他格式直接应用
+      else {
+        this.quill.formatText(selection.index, selection.length, format, value);
+      }
+    }
+  }
+
+  /**
+   * 初始化编辑器内容
+   */
+  private initialize(): void {
+    // 使用 Quill API 设置初始内容
+    this.quill.setContents([
+      { insert: "欢迎使用富文本编辑器\n" },
+      { insert: "这是第二行内容" },
+    ]);
+  }
+
+  /**
+   * 强制清理多余 DOM 结构
+   * @param editor - 编辑器容器元素
+   */
+  private cleanupContainer(editor: HTMLElement): void {
+    const quillToolbar = editor.querySelector(".quill-toolbar");
+    if (quillToolbar && quillToolbar.parentNode) {
+      quillToolbar.parentNode.removeChild(quillToolbar);
+    }
+  }
+}

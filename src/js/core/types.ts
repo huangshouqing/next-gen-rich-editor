@@ -39,6 +39,7 @@ export interface ModuleConfig {
 }
 // 新增接口用于定义模块实例的结构（可根据实际模块扩展）
 export interface EditorModuleInstance {
+  [x: string]: any;
   name: string;
   // 可选：添加通用方法或属性
 }

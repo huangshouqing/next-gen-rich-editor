@@ -1,5 +1,7 @@
 import type EditorCore from "../core/EditorCore";
-
+import { execCommand } from "./execcommand.utils";
+import type { ExecCommandStyle } from "./interfaces";
+import { DeckdeckgoInlineEditorUtils, hexToRgb } from "./utils";
 /**
  * 富文本编辑器命令执行器 - 替代已废弃的 document.execCommand
  */
@@ -44,11 +46,11 @@ class RichTextCommand {
    * @param value 命令值
    * @returns 是否执行成功
    */
-  public execCommand(
+  public async execCommand(
     command: string,
     showUI: boolean = false,
     value: string | null = null
-  ): boolean {
+  ) {
     try {
       this._editor.restoreSelection({ forceFocus: true });
       const selection = this._document.getSelection();
@@ -65,10 +67,75 @@ class RichTextCommand {
       }
       // 处理各种命令
       switch (command.toLowerCase()) {
-        case "bold":
-        case "italic":
-        case "underline":
-        case "strikethrough":
+        case "bold": //加粗/取消加粗
+          await execCommand(
+            selection,
+            {
+              cmd: "style",
+              detail: {
+                style: "font-weight",
+                value: "bold",
+                initial: (element: HTMLElement | null) =>
+                  Promise.resolve(
+                    element && element.style["font-weight"] === "bold"
+                  ),
+              },
+            },
+            "div,p,h1,h2,h3,h4,h5,h6,li,table,tbody,td,th,span,strong,b,em,a"
+          );
+          break;
+        case "italic": //  斜体/取消斜体
+          await execCommand(
+            selection,
+            {
+              cmd: "style",
+              detail: {
+                style: "font-style",
+                value: "italic",
+                initial: (element: HTMLElement | null) =>
+                  Promise.resolve(
+                    element && element.style["font-style"] === "italic"
+                  ),
+              },
+            },
+            "div,p,h1,h2,h3,h4,h5,h6,li,table,tbody,td,th,span,strong,b,em,a"
+          );
+          break;
+        case "underline": // 设置/取消下划线
+          await execCommand(
+            selection,
+            {
+              cmd: "style",
+              detail: {
+                style: "text-decoration",
+                value: "underline",
+                initial: (element: HTMLElement | null) =>
+                  Promise.resolve(
+                    element && element.style["text-decoration"] === "underline"
+                  ),
+              },
+            },
+            "div,p,h1,h2,h3,h4,h5,h6,li,table,tbody,td,th,span,strong,b,em,a"
+          );
+          break;
+        case "strikethrough": // 设置/取消删除线
+          await execCommand(
+            selection,
+            {
+              cmd: "style",
+              detail: {
+                style: "text-decoration",
+                value: "line-through",
+                initial: (element: HTMLElement | null) =>
+                  Promise.resolve(
+                    element &&
+                      element.style["text-decoration"] === "line-through"
+                  ),
+              },
+            },
+            "div,p,h1,h2,h3,h4,h5,h6,li,table,tbody,td,th,span,strong,b,em,a"
+          );
+          break;
         case "indent":
         case "outdent":
         case "insertorderedlist":
@@ -86,8 +153,29 @@ class RichTextCommand {
           this.setFontFamily(value || "");
           return true;
         case "forecolor":
-          this.setTextColor(value || "");
-          return true;
+          // this.setTextColor(value || "");
+          await execCommand(
+            selection,
+            {
+              cmd: "style",
+              detail: {
+                style: "color",
+                value,
+                initial: (element: HTMLElement | null) => {
+                  return new Promise<boolean>(async (resolve) => {
+                    const rgb: string = await hexToRgb(value);
+                    resolve(
+                      element &&
+                        (element.style[this.action] === value ||
+                          element.style[this.action] === `rgb(${rgb})`)
+                    );
+                  });
+                },
+              },
+            },
+            "div,p,h1,h2,h3,h4,h5,h6,li,table,tbody,td,th,span,strong,b,em,a"
+          );
+          break;
         case "hilitecolor":
         case "backcolor":
           this.setBackgroundColor(value || "");

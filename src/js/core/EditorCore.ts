@@ -8,8 +8,10 @@ import {
   commandIconMap,
 } from "./types";
 import RichTextCommand from "../execcommand/richExeccommand";
+import { QuillModuleImpl } from "../modules/QuillModule";
 
 export default class EditorCore {
+  public quillModule: QuillModuleImpl;
   // 选择器
   private selector: string;
   //  editor config
@@ -17,7 +19,7 @@ export default class EditorCore {
   //
   public container: HTMLElement | null;
   // 编辑区元素
-  public root: HTMLElement | null;
+  private root: HTMLElement | null;
   // 注册的模块
   private modules: ModuleConfig[];
   // 模块实例化
@@ -193,16 +195,8 @@ export default class EditorCore {
               `);
             }
             break;
-          // 处理撤销/重做
-          case "redo":
-            e.preventDefault();
-            this.redo();
-            break;
-          case "undo":
-            e.preventDefault();
-            this.undo();
-            break;
           default:
+            //  处理其他命令
             if (cmd) {
               this.execCommand(cmd, value);
             }
@@ -216,7 +210,6 @@ export default class EditorCore {
    */
   private selectionChangeHandler() {
     document.addEventListener("selectionchange", () => {
-      // const editorContent = this.container?.querySelector(".editor-content");
       const selection = window.getSelection();
       if (!this.root || !selection || selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
@@ -231,19 +224,20 @@ export default class EditorCore {
    */
   private contentChangeHandler(): void {
     if (!this.container) return;
-    const editorContent = this.container.querySelector(".editor-content");
-    if (!editorContent) return;
+    if (!this.root) return;
     let debounceTimer: number | null = null;
-    editorContent.addEventListener("input", () => {
+    this.root.addEventListener("input", () => {
       if (this.isProcessing) return;
       // 防抖处理
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => {
-        this.saveHistoryState(editorContent.innerHTML);
+        if (this.root) {
+          this.saveHistoryState(this.root.innerHTML);
+        }
       }, 300);
     });
     // 初始化时保存初始状态
-    this.saveHistoryState(editorContent.innerHTML);
+    this.saveHistoryState(this.root.innerHTML);
   }
   private debouncedSaveSelection = this.debounce(() => {
     this.saveSelection();
@@ -258,6 +252,32 @@ export default class EditorCore {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => fn.apply(this, args), delay);
     }) as unknown as T;
+  }
+  private initNativeEditor(parentContainer: HTMLElement): void {
+    const container = document.createElement("div");
+    container.className = "next-gen-rich-editor";
+    container.contentEditable = "false";
+    // 创建工具栏
+    const toolbar = this.createToolbar(
+      this.config.toolbar || this.defaultToolbarConfig
+    );
+    container.appendChild(toolbar);
+    // 创建可编辑区域
+    const editorContent = document.createElement("div");
+    editorContent.className = "editor-content";
+    editorContent.contentEditable = "false";
+    const p = document.createElement("div");
+    const br = document.createElement("br"); // 新增: 创建 br 元素
+    p.appendChild(br); // 新增: 将 br 添加到 p 中
+    editorContent?.appendChild(p);
+    container.appendChild(toolbar); // 创建工具栏
+    container.appendChild(editorContent); // 创建可编辑区域
+    parentContainer.appendChild(container); //  添加到父容器（用户提供的 dom）中
+    this.root = this.container?.querySelector(
+      ".editor-content"
+    ) as HTMLElement | null;
+    this.quillModule = new QuillModuleImpl(this.root);
+    this._bindEvents(); // 绑定事件
   }
   private createToolbar(toolbarConfig: ToolbarConfig): HTMLElement {
     const toolbar = document.createElement("div");
@@ -286,29 +306,6 @@ export default class EditorCore {
     });
     return toolbar;
   }
-  private initNativeEditor(parentContainer: HTMLElement): void {
-    const container = document.createElement("div");
-    container.className = "next-gen-rich-editor";
-    container.contentEditable = "false";
-    // 创建工具栏
-    const toolbar = this.createToolbar(
-      this.config.toolbar || this.defaultToolbarConfig
-    );
-    container.appendChild(toolbar);
-    // 创建可编辑区域
-    const editorContent = document.createElement("div");
-    editorContent.className = "editor-content";
-    editorContent.contentEditable = "true"; // 仅此处允许输入
-    const p = document.createElement("div");
-    const br = document.createElement("br"); // 新增: 创建 br 元素
-    p.appendChild(br); // 新增: 将 br 添加到 p 中
-    editorContent?.appendChild(p);
-    container.appendChild(toolbar); // 创建工具栏
-    container.appendChild(editorContent); // 创建可编辑区域
-    parentContainer.appendChild(container); //  添加到父容器（用户提供的 dom）中
-    this.root = this.container?.querySelector(".editor-content");
-    this._bindEvents(); // 绑定事件
-  }
   public restoreSelection(
     options: {
       forceFocus?: boolean;
@@ -325,8 +322,6 @@ export default class EditorCore {
     selection?.removeAllRanges();
     selection?.addRange(this.savedRange.cloneRange());
     if (options.forceFocus) {
-      debugger;
-      // const editorContent = this.container?.querySelector(".editor-content");
       this.root?.focus();
     }
   }
@@ -337,7 +332,6 @@ export default class EditorCore {
         ? this.selection.getRangeAt(0).cloneRange()
         : null;
   }
-
   /**
    * 保存当前编辑器状态到历史记录
    */
@@ -353,44 +347,6 @@ export default class EditorCore {
     }
   }
 
-  /**
-   * 执行撤销操作
-   */
-  public undo(): void {
-    if (this.historyPointer <= 0 || !this.root) return;
-
-    this.isProcessing = true;
-    this.historyPointer--;
-
-    // const editorContent = this.container?.querySelector(
-    //   ".editor-content"
-    // ) as HTMLElement;
-    this.root.innerHTML = this.history[this.historyPointer];
-
-    // 恢复选区
-    this.restoreSelection({ forceFocus: true });
-    this.isProcessing = false;
-  }
-
-  /**
-   * 执行重做操作
-   */
-  public redo(): void {
-    if (this.historyPointer >= this.history.length - 1 || !this.root) return;
-
-    this.isProcessing = true;
-    this.historyPointer++;
-
-    // const editorContent = this.container?.querySelector(
-    //   ".editor-content"
-    // ) as HTMLElement;
-    this.root.innerHTML = this.history[this.historyPointer];
-
-    // 恢复选区
-    this.restoreSelection({ forceFocus: true });
-    this.isProcessing = false;
-  }
-
   // 以下是工具方法，提供给开发者使用
   /**
    * 获取编辑器当前内容（HTML）
@@ -398,9 +354,6 @@ export default class EditorCore {
   public getContent(): string {
     if (!this.container || !this.root) return "";
 
-    // const editorContent = this.container.querySelector(
-    //   ".editor-content"
-    // ) as HTMLElement;
     return this.root.innerHTML.trim();
   }
 
@@ -410,14 +363,7 @@ export default class EditorCore {
    */
   public setContent(content: string): void {
     if (!this.container || !this.root) return;
-
-    // const editorContent = this.container.querySelector(
-    //   ".editor-content"
-    // ) as HTMLElement;
     this.root.innerHTML = content;
-
-    // 保存初始状态到历史记录
-    this.saveHistoryState(content);
   }
 
   /**
@@ -426,9 +372,6 @@ export default class EditorCore {
   public getPlainText(): string {
     if (!this.container || !this.root) return "";
 
-    // const editorContent = this.container.querySelector(
-    //   ".editor-content"
-    // ) as HTMLElement;
     return this.root.innerText;
   }
 
@@ -487,12 +430,6 @@ export default class EditorCore {
       range.collapse(false);
       selection?.removeAllRanges();
       selection?.addRange(range);
-
-      // 触发内容变化事件以更新历史记录
-      // const editorContent = this.container.querySelector(
-      //   ".editor-content"
-      // ) as HTMLElement;
-      this.saveHistoryState(this.root.innerHTML);
     }
   }
 
@@ -520,9 +457,6 @@ export default class EditorCore {
   public clearContent(): void {
     if (!this.container || !this.root) return;
 
-    // const editorContent = this.container.querySelector(
-    //   ".editor-content"
-    // ) as HTMLElement;
     this.root.innerHTML = "";
 
     // 重置历史记录
@@ -533,31 +467,14 @@ export default class EditorCore {
   public getMarkdown(): string {
     if (!this.container || !this.root) return "";
 
-    // const editorContent = this.container.querySelector(
-    //   ".editor-content"
-    // ) as HTMLElement;
     return this.htmlToMarkdownConverter.convert(this.root.innerHTML);
   }
-
   /**
-   * 设置从 Markdown 转换的内容
-   * @param markdown - Markdown 内容
+   * 执行富文本命令
+   * @param command 命令名称（如 'bold', 'insertText'）
+   * @param value 可选参数（如文本内容、链接地址）
    */
-  public setMarkdown(markdown: string): void {
-    // TODO: 可以在此处实现 Markdown 解析器来设置内容
-    console.warn("Markdown 到 HTML 的转换尚未实现");
-  }
-
-  /**
-   * execcommand 指令
-   * @param cmd
-   * @param value
-   */
-  public execCommand(cmd: string, value: string | null = null): void {
-    // todo 替换为封装的原生 execCommand
-    this.commandInstance.execCommand(cmd, false, value || undefined);
-  }
-  private getContentElement() {
-    return this.container;
+  public execCommand(command: string, value?: any): void {
+    this.quillModule.execCommand(command, value);
   }
 }

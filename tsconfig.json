@@ -21,7 +21,8 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "typeRoots": ["./src/js/types", "./node_modules/@types"]
   },
-  "include": ["src"]
+  "include": ["src/**/*"]
 }
