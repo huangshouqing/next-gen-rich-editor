@@ -19,6 +19,7 @@ new RichEditor("#editor", {
     ["foreColor", "hiliteColor"],
     ["undo", "redo"],
     ["clear", "insertSample", "toMarkdown", "clearFormat"],
+    ['formula']
   ],
   modules: [
     ImageModule,

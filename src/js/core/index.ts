@@ -7,7 +7,7 @@ import {
   commandIconMap,
 } from "../types/types";
 import { QuillModuleImpl } from "./quill";
-import '../../css/base.scss'
+import "../../css/base.scss";
 
 export default class EditorCore {
   public quillInstance: QuillModuleImpl | undefined;
@@ -292,6 +292,8 @@ export default class EditorCore {
           button.id = "insert-table-btn";
         } else if (cmd === "fontSize") {
           button.id = "font-size-btn";
+        } else if (cmd === "formula") {
+          button.id = "formula-btn";
         }
         button.dataset.cmd = cmd;
         // 直接插入 SVG 字符串
@@ -438,7 +440,7 @@ export default class EditorCore {
   }
   public getMarkdown(): string {
     if (!this.container || !this.root) return "";
-    return this.moduleInstances['HtmlToMarkdown'].convert(this.root.innerHTML);
+    return this.moduleInstances["HtmlToMarkdown"].convert(this.root.innerHTML);
   }
   /**
    * 执行富文本命令
