@@ -1,4 +1,5 @@
 import Quill from "quill";
+// 引入 quill-better-table 模块
 import QuillBetterTable from "../modules/quill-better-table/quill-better-table.js";
 // 使用 Quill 官方 CSS
 import "../../css/quill.snow.css";
@@ -14,10 +15,9 @@ Quill.register(
   },
   true
 );
-export interface QuillModule {
-  execCommand(command: string, value?: any): void;
-}
-export class QuillModuleImpl implements QuillModule {
+
+// 定义Quill模块接口
+export class QuillModuleImpl {
   public quill: Quill;
   // 命令映射表：将用户自定义命令映射到 Quill 命令
   private commandMap: Record<string, string> = {
@@ -169,7 +169,11 @@ export class QuillModuleImpl implements QuillModule {
       case "size":
       case "color":
       case "background":
-        this.applyFormat(quillCommand, value);
+        // 修复：使用正确的选区范围应用格式
+        const range = this.quill.getSelection();
+        if (range) {
+          this.quill.formatText(range.index, range.length, quillCommand, value);
+        }
         break;
       case "undo":
         this.quill.history.undo();

@@ -7,7 +7,7 @@ import {
   commandIconMap,
 } from "../types/types";
 import { QuillModuleImpl } from "./quill";
-import '../../css/base.css'
+import '../../css/base.scss'
 
 export default class EditorCore {
   public quillInstance: QuillModuleImpl | undefined;

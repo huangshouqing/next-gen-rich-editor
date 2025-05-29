@@ -28,7 +28,7 @@ export default class FontSizeModule {
     this.removeExistingDropdown();
     const dropdown = document.createElement("div");
     dropdown.className = "font-size-dropdown";
-    const sizes = ["10px", "12px", "14px", "16px", "18px", "24px", "32px"];
+    const sizes = ["10", "12", "14", "16", "18", "24", "32"];
     sizes.forEach((size) => {
       const item = document.createElement("div");
       item.className = "font-size-dropdown-item";
