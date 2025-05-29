@@ -8,7 +8,7 @@ export interface QuillModule {
 }
 
 export class QuillModuleImpl implements QuillModule {
-  private quill: Quill;
+  public quill: Quill;
 
   // 命令映射表：将用户自定义命令映射到 Quill 命令
   private commandMap: Record<string, string> = {
@@ -82,6 +82,41 @@ export class QuillModuleImpl implements QuillModule {
   execCommand(command: string, value?: any): void {
     // 优先从映射表转换命令
     const quillCommand = this.commandMap[command] || command;
+
+    // 颜色白名单验证
+    if (quillCommand === "color" || quillCommand === "background") {
+      const validColors = [
+        "#FF0000",
+        "#DC143C",
+        "#B22222", // 红色系
+        "#00FF00",
+        "#008000",
+        "#228B22", // 绿色系
+        "#0000FF",
+        "#000080",
+        "#4169E1", // 蓝色系
+        "#FFFF00",
+        "#FFD700",
+        "#FFA500", // 黄色系
+        "#800080",
+        "#8000FF", // 紫色系
+        "#FFA500",
+        "#FF8C00", // 橙色系
+        "#FFC0CB",
+        "#FF69B4", // 粉色系
+        "#A52A2A",
+        "#8B4513", // 棕色系
+        "#808080",
+        "#C0C0C0",
+        "#A9A9A9", // 灰色系
+        "#000000", // 黑色
+      ];
+
+      if (!validColors.includes(value)) {
+        console.warn(`不支持的颜色值：${value}`);
+        return;
+      }
+    }
 
     switch (quillCommand) {
       case "insertText":
@@ -189,48 +224,28 @@ export class QuillModuleImpl implements QuillModule {
           if (currentLine) {
             const lineLength = currentLine.length();
 
-            // 统一处理所有多段落格式
-            if (format === "list") {
-              // 列表格式特殊处理
-              // 检查当前行是否已有列表格式
-              const currentFormat = this.quill.getFormat(
+            // 对字体大小进行格式验证
+            if (
+              format === "size" &&
+              typeof value === "string" &&
+              value.endsWith("px")
+            ) {
+              // 修正：移除 px 后缀并按 Quill 格式要求处理
+              const fontSizeValue = value.replace("px", "");
+              this.quill.formatText(
                 currentIndex - currentOffset,
-                1
-              );
-              const currentList = currentFormat.list;
-
-              // 如果已有相同类型列表则移除，否则应用新格式
-              const newValue = currentList === value ? false : value;
-              this.quill.formatLine(
-                currentIndex - currentOffset,
-                1,
-                "list",
-                newValue
+                lineLength,
+                format,
+                fontSizeValue
               );
             } else {
-              // 对字体大小进行格式验证
-              if (
-                format === "size" &&
-                typeof value === "string" &&
-                value.endsWith("px")
-              ) {
-                // 修正：移除 px 后缀并按 Quill 格式要求处理
-                const fontSizeValue = value.replace("px", "");
-                this.quill.formatText(
-                  currentIndex - currentOffset,
-                  lineLength,
-                  format,
-                  fontSizeValue
-                );
-              } else {
-                // 其他格式保持原处理方式
-                this.quill.formatText(
-                  currentIndex - currentOffset,
-                  lineLength,
-                  format,
-                  value
-                );
-              }
+              // 其他格式保持原处理方式
+              this.quill.formatText(
+                currentIndex - currentOffset,
+                lineLength,
+                format,
+                value
+              );
             }
           }
           currentIndex += currentLine ? currentLine.length() : 1;
@@ -251,6 +266,9 @@ export class QuillModuleImpl implements QuillModule {
     this.quill.setContents([
       { insert: "欢迎使用富文本编辑器\n" },
       { insert: "这是第二行内容" },
+      { insert: "欢迎使用富文本编辑器\n" },
+      { insert: "欢迎使用富文本编辑器\n" },
+      { insert: "欢迎使用富文本编辑器\n" },
     ]);
   }
 

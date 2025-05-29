@@ -11,21 +11,21 @@ import RichTextCommand from "../execcommand/richExeccommand";
 import { QuillModuleImpl } from "../modules/QuillModule";
 
 export default class EditorCore {
-  public quillModule: QuillModuleImpl;
+  public quillInstance: QuillModuleImpl | undefined;
   // 选择器
   private selector: string;
-  //  editor config
+  //
   private config: EditorConfig;
   //
   public container: HTMLElement | null;
-  // 编辑区元素
-  private root: HTMLElement | null;
+  // 包裹 quill 的元素
+  private root: HTMLElement | null | undefined;
   // 注册的模块
   private modules: ModuleConfig[];
   // 模块实例化
   private moduleInstances: Record<string, EditorModuleInstance> = {};
   // 保存选区
-  public savedRange: any;
+  private savedRange: { index: number; length: number } | null = null;
   public selection: any;
   selections = { index: 0, length: 0 };
   // 历史
@@ -276,7 +276,9 @@ export default class EditorCore {
     this.root = this.container?.querySelector(
       ".editor-content"
     ) as HTMLElement | null;
-    this.quillModule = new QuillModuleImpl(this.root);
+    if (this.root) {
+      this.quillInstance = new QuillModuleImpl(this.root);
+    }
     this._bindEvents(); // 绑定事件
   }
   private createToolbar(toolbarConfig: ToolbarConfig): HTMLElement {
@@ -306,31 +308,31 @@ export default class EditorCore {
     });
     return toolbar;
   }
-  public restoreSelection(
-    options: {
-      forceFocus?: boolean;
-    } = {}
-  ): void {
-    if (!this.savedRange) return;
-    // 验证选区有效性
-    if (!this.savedRange.startContainer.isConnected) {
-      this.savedRange = null;
-      return;
-    }
-    const selection = window.getSelection();
-    if (!selection) return;
-    selection?.removeAllRanges();
-    selection?.addRange(this.savedRange.cloneRange());
-    if (options.forceFocus) {
-      this.root?.focus();
+  /**
+   * 保存当前选区
+   */
+  saveSelection(): void {
+    const selection = this.quillInstance?.quill.getSelection();
+    if (selection) {
+      // 保存选区信息到实例变量
+      this.savedRange = {
+        index: selection.index,
+        length: selection.length,
+      };
     }
   }
-  public saveSelection(): void {
-    this.selection = window.getSelection();
-    this.savedRange =
-      this.selection?.rangeCount > 0
-        ? this.selection.getRangeAt(0).cloneRange()
-        : null;
+  /**
+   * 恢复之前保存的选区
+   */
+  restoreSelection(): void {
+    if (this.savedRange && this.quillInstance) {
+      // 恢复选区并聚焦编辑器
+      this.quillInstance.quill.setSelection(
+        this.savedRange.index,
+        this.savedRange.length
+      );
+      this.quillInstance.quill.focus();
+    }
   }
   /**
    * 保存当前编辑器状态到历史记录
@@ -353,10 +355,8 @@ export default class EditorCore {
    */
   public getContent(): string {
     if (!this.container || !this.root) return "";
-
     return this.root.innerHTML.trim();
   }
-
   /**
    * 设置编辑器内容
    * @param content - 要写入的 HTML 内容
@@ -365,74 +365,58 @@ export default class EditorCore {
     if (!this.container || !this.root) return;
     this.root.innerHTML = content;
   }
-
   /**
    * 获取纯文本内容
    */
   public getPlainText(): string {
     if (!this.container || !this.root) return "";
-
     return this.root.innerText;
   }
-
   /**
    * 插入内容到当前光标位置
    * @param html - 要插入的 HTML 内容
    */
   public insertContent(html: string): void {
     if (!this.container) return;
-
-    this.restoreSelection({ forceFocus: true });
-
+    this.restoreSelection();
     const selection = window.getSelection();
     const range = selection?.getRangeAt(0);
-
     if (range) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
-
       Array.from(doc.body.children).forEach((node) => {
         range.insertNode(node.cloneNode(true));
       });
-
       // 更新选区到插入内容之后
       range.collapse(false);
       selection?.removeAllRanges();
       selection?.addRange(range);
     }
   }
-
   /**
    * 替换当前选中内容
    * @param html - 新的 HTML 内容
    */
   public replaceSelection(html: string): void {
     if (!this.container || !this.root) return;
-
-    this.restoreSelection({ forceFocus: true });
-
+    this.restoreSelection();
     const selection = window.getSelection();
     const range = selection?.getRangeAt(0);
-
     if (range) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
       const fragment = document.createDocumentFragment();
-
       Array.from(doc.body.children).forEach((node) => {
         fragment.appendChild(node.cloneNode(true));
       });
-
       range.deleteContents();
       range.insertNode(fragment);
-
       // 更新选区到新插入的内容末尾
       range.collapse(false);
       selection?.removeAllRanges();
       selection?.addRange(range);
     }
   }
-
   /**
    * 将 HTML 字符串转换为 DOM 元素
    * @param htmlString - HTML 字符串
@@ -442,31 +426,24 @@ export default class EditorCore {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, "text/html");
     const container = document.createElement("div");
-
     // 复制所有子节点到容器中
     while (doc.body.firstChild) {
       container.appendChild(doc.body.firstChild);
     }
-
     return container;
   }
-
   /**
    * 清空编辑器内容
    */
   public clearContent(): void {
     if (!this.container || !this.root) return;
-
     this.root.innerHTML = "";
-
     // 重置历史记录
     this.history = [];
     this.historyPointer = -1;
   }
-
   public getMarkdown(): string {
     if (!this.container || !this.root) return "";
-
     return this.htmlToMarkdownConverter.convert(this.root.innerHTML);
   }
   /**
@@ -475,6 +452,9 @@ export default class EditorCore {
    * @param value 可选参数（如文本内容、链接地址）
    */
   public execCommand(command: string, value?: any): void {
-    this.quillModule.execCommand(command, value);
+    // 先恢复保存的选区
+    this.restoreSelection();
+    // 执行原有命令逻辑
+    this.quillInstance && this.quillInstance.execCommand(command, value);
   }
 }
