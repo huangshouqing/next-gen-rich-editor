@@ -1,0 +1,22 @@
+/* 字体和大小 */
+.ql-font-serif {
+  font-family: serif;
+}
+.ql-font-monospace {
+  font-family: monospace;
+}
+
+/* 显式定义字号 class */
+.ql-size-10 { font-size: 10px !important; }
+.ql-size-12 { font-size: 12px !important; }
+.ql-size-14 { font-size: 14px !important; }
+.ql-size-15 { font-size: 15px !important; }
+.ql-size-16 { font-size: 16px !important; }
+.ql-size-18 { font-size: 18px !important; }
+.ql-size-24 { font-size: 24px !important; }
+.ql-size-32 { font-size: 32px !important; }
+
+/* 保留原有尺寸控制 */
+.ql-size-small { @extend .ql-size-14; }
+.ql-size-large { @extend .ql-size-18; }
+.ql-size-huge { @extend .ql-size-24; }

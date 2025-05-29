@@ -1,7 +1,8 @@
 import Quill from "quill";
 // 使用 Quill 官方 CSS
 import "../../css/quill.snow.css";
-
+// 引入字体大小 css
+import "../../css/quill-styles.css";
 export interface QuillModule {
   execCommand(command: string, value?: any): void;
 }
@@ -49,16 +50,8 @@ export class QuillModuleImpl implements QuillModule {
 
   constructor(editor: HTMLElement) {
     let FontSize = Quill.import("formats/size");
-    FontSize.whitelist = [
-      "10",
-      "12",
-      "14",
-      "16", 
-      "18",
-      "24",
-      "32",
-    ];
-    Quill.register(FontSize, true);
+    (FontSize as any).whitelist = ["10", "12", "14", "16", "18", "24", "32"];
+    Quill.register("formats/size", FontSize, true);
     // 初始化 Quill 编辑器配置
     this.quill = new Quill(editor, {
       theme: "snow",
