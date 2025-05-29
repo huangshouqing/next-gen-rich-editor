@@ -1,6 +1,6 @@
 import EditorCore from "@/js/core/EditorCore";
-import "@/css/table.css";
-import ContextMenu from "../utils/ContextMenu";
+import "./table.scss";
+import ContextMenu from "../../utils/ContextMenu";
 interface EditorDialog {
   dialog: HTMLDivElement | null;
 }
@@ -549,16 +549,5 @@ export default class TableModule implements EditorDialog {
     colorPicker.addEventListener("blur", () => {
       document.body.removeChild(colorPicker);
     });
-  }
-  isTableCell(blot) {
-    return blot.statics.blotName === TableCellBlot.blotName;
-  }
-
-  isInTableCell(current) {
-    return current && current.parent
-      ? this.isTableCell(current.parent)
-        ? true
-        : this.isInTableCell(current.parent)
-      : false;
   }
 }

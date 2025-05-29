@@ -1,20 +1,19 @@
 // 在文件顶部添加
-import HtmlToMarkdown from "@/js/modules/HtmlToMarkdown";
 import {
   type EditorConfig,
   type ModuleConfig,
   type EditorModuleInstance,
   type ToolbarConfig,
   commandIconMap,
-} from "./types";
-import RichTextCommand from "../execcommand/richExeccommand";
-import { QuillModuleImpl } from "../modules/QuillModule";
+} from "../types/types";
+import { QuillModuleImpl } from "./quill";
+import '../../css/base.css'
 
 export default class EditorCore {
   public quillInstance: QuillModuleImpl | undefined;
   // 选择器
   private selector: string;
-  //
+  // 配置
   private config: EditorConfig;
   //
   public container: HTMLElement | null;
@@ -32,8 +31,6 @@ export default class EditorCore {
   private history: string[] = [];
   private historyPointer: number = -1;
   private isProcessing: boolean = false;
-  // html 转 md
-  private htmlToMarkdownConverter: HtmlToMarkdown = new HtmlToMarkdown();
   // 默认的工具栏配置
   private defaultToolbarConfig: ToolbarConfig = [
     ["bold", "italic", "underline", "strikeThrough"],
@@ -45,17 +42,11 @@ export default class EditorCore {
     ["undo", "redo"],
     ["clear", "insertSample", "toMarkdown", "clearFormat"],
   ];
-  //
-  public commandInstance;
 
   constructor(
     selector: string,
     config: { modules: ModuleConfig[]; toolbar?: ToolbarConfig }
   ) {
-    this.commandInstance = RichTextCommand.getInstance({
-      editor: this,
-      doc: document,
-    });
     this.selector = selector;
     this.config = config;
     this.container = document.querySelector(this.selector);
@@ -145,7 +136,9 @@ export default class EditorCore {
             // } else {
             //   console.warn("TableModule 模块未注入，请检查配置。");
             // }
-            this.quillInstance?.quill.getModule('better-table').insertTable(3, 3);
+            this.quillInstance?.quill
+              .getModule("better-table")
+              .insertTable(3, 3);
             break;
           // 插入图片
           case "insertImage":
@@ -445,7 +438,7 @@ export default class EditorCore {
   }
   public getMarkdown(): string {
     if (!this.container || !this.root) return "";
-    return this.htmlToMarkdownConverter.convert(this.root.innerHTML);
+    return this.moduleInstances['HtmlToMarkdown'].convert(this.root.innerHTML);
   }
   /**
    * 执行富文本命令

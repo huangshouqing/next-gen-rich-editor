@@ -1,12 +1,12 @@
 // 初始化编辑器
 import {
   RichEditor,
-  TableModule,
   ImageModule,
   LinkModule,
   FontSizeModule,
   FontColorModule,
   BackgroundColorModule,
+  HtmlToMarkdown
 } from "./src/main";
 new RichEditor("#editor", {
   toolbar: [
@@ -21,11 +21,11 @@ new RichEditor("#editor", {
     ["clear", "insertSample", "toMarkdown", "clearFormat"],
   ],
   modules: [
-    TableModule,
     ImageModule,
     LinkModule,
     FontSizeModule,
     FontColorModule,
     BackgroundColorModule,
+    HtmlToMarkdown
   ],
 });

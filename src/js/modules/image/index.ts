@@ -1,7 +1,7 @@
-import EditorCore from "@/js/core/EditorCore";
-import "@/css/image.css";
+import EditorCore from "@/js/core/index";
+import "./image.scss";
 import "cropperjs/src/css/cropper.css";
-import ContextMenu from "@/js/modules/ContextMenu";
+import ContextMenu from "../../utils/ContextMenu";
 
 import Cropper from "cropperjs";
 /**

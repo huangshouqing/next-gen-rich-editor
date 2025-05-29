@@ -14,8 +14,7 @@
     Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
-
-
+/* 工具栏*/
 .toolbar {
   user-select: none;
   pointer-events: auto; /* 保证按钮可点击 */

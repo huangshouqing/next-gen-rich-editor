@@ -1,27 +1,24 @@
-import { Quill } from "./TableBlot.ts";
+import Quill from "quill";
+import QuillBetterTable from "../modules/quill-better-table/quill-better-table.js";
 // 使用 Quill 官方 CSS
 import "../../css/quill.snow.css";
 // 引入字体大小 css
 import "../../css/quill-styles.css";
+// quill-better-table  css
+import "../modules/quill-better-table/assets/quill-better-table.scss";
 
-import QuillBetterTable from "./quill-beter-table/quill-better-table.js";
-// import better-table styles file
-import "./quill-beter-table/assets/quill-better-table.scss";
-
+// 注册 quill-better-table 模块
 Quill.register(
   {
     "modules/better-table": QuillBetterTable,
   },
   true
 );
-
 export interface QuillModule {
   execCommand(command: string, value?: any): void;
 }
-
 export class QuillModuleImpl implements QuillModule {
   public quill: Quill;
-
   // 命令映射表：将用户自定义命令映射到 Quill 命令
   private commandMap: Record<string, string> = {
     // 格式相关
@@ -29,21 +26,17 @@ export class QuillModuleImpl implements QuillModule {
     italic: "italic",
     underline: "underline",
     strikeThrough: "strike",
-
     // 对齐方式
     justifyLeft: "align-left",
     justifyCenter: "align-center",
     justifyRight: "align-right",
     justifyFull: "align-justify",
-
     // 列表
     insertUnorderedList: "list-bullet",
     insertOrderedList: "list-ordered",
-
     // 缩进
     indent: "indent-increase",
     outdent: "indent-decrease",
-
     // 字体大小
     fontSize: "size",
     // 字体颜色

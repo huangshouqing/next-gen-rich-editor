@@ -1,4 +1,4 @@
-import EditorCore from '../core/EditorCore';
+import EditorCore from '../../core';
 
 export default class LinkModule {
   constructor(private editor: EditorCore) {}
