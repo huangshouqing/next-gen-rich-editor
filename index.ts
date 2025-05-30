@@ -1,14 +1,15 @@
 // 初始化编辑器
 import {
-  RichEditor,
+  EditorCore,
   ImageModule,
   LinkModule,
   FontSizeModule,
   FontColorModule,
   BackgroundColorModule,
-  HtmlToMarkdown
+  HtmlToMarkdown,
+  FormulaModule
 } from "./src/main";
-new RichEditor("#editor", {
+new EditorCore("#editor", {
   toolbar: [
     ["fontSize"],
     ["bold", "italic", "underline", "strikeThrough"],
@@ -27,6 +28,7 @@ new RichEditor("#editor", {
     FontSizeModule,
     FontColorModule,
     BackgroundColorModule,
-    HtmlToMarkdown
+    HtmlToMarkdown,
+    FormulaModule
   ],
 });

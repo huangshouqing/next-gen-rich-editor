@@ -1,4 +1,4 @@
-import EditorCore from "@/js/core/index";
+import { EditorCore } from "@/js/core/index";
 import "./image.scss";
 import "cropperjs/src/css/cropper.css";
 import ContextMenu from "../../utils/ContextMenu";

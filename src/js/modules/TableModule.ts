@@ -1,4 +1,4 @@
-import EditorCore from "@/js/core/EditorCore";
+import { EditorCore } from "@/js/core/EditorCore";
 import "@/css/table.css";
 import ContextMenu from "../utils/ContextMenu";
 interface EditorDialog {

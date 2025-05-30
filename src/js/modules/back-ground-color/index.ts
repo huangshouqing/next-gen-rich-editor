@@ -1,5 +1,5 @@
 // 新增模块文件，实现与FontColorModule相同颜色选择器功能
-import type EditorCore from "../../core";
+import type { EditorCore } from "../../core";
 
 export default class BackgroundColorModule {
   private editor: EditorCore;

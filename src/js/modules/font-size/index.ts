@@ -1,5 +1,5 @@
 // src/js/modules/FontSizeModule.ts
-import EditorCore from "../../core";
+import { EditorCore } from "../../core";
 
 export default class FontSizeModule {
   public name = "FontSizeModule";

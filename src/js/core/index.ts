@@ -9,13 +9,13 @@ import {
 import { QuillModuleImpl } from "./quill";
 import "../../css/base.scss";
 
-export default class EditorCore {
+export class EditorCore {
   public quillInstance: QuillModuleImpl | undefined;
   // 选择器
   private selector: string;
   // 配置
   private config: EditorConfig;
-  //
+  // 容器
   public container: HTMLElement | null;
   // 包裹 quill 的元素
   private root: HTMLElement | null | undefined;
@@ -49,14 +49,15 @@ export default class EditorCore {
   ) {
     this.selector = selector;
     this.config = config;
-    this.container = document.querySelector(this.selector);
+    this.container = document.querySelector(selector);
     this.modules = config.modules;
-    if (this.container) {
-      this.initNativeEditor(this.container);
-    } else {
-      console.error(`Element with selector ${this.selector} not found.`);
+    
+    if (!this.container) {
+      console.error(`Element with selector ${selector} not found.`);
       return;
     }
+    
+    this.initNativeEditor(this.container);
     this.registerModules();
   }
 
@@ -89,10 +90,14 @@ export default class EditorCore {
     this.container.querySelectorAll(".btn").forEach((btn: Element) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
+        e.stopPropagation();
         this.saveSelection();
         const cmd = (btn as HTMLElement).dataset.cmd;
         let value: string | null = null;
         switch (cmd) {
+          case "formula":
+            this.moduleInstances["FormulaModule"]?.showDialog?.();
+            break;
           // 字体颜色
           case "foreColor":
             if (this.moduleInstances["FontColorModule"]) {
@@ -451,6 +456,8 @@ export default class EditorCore {
     // 先恢复保存的选区
     this.restoreSelection();
     // 执行原有命令逻辑
-    this.quillInstance && this.quillInstance.execCommand(command, value);
+    if (this.quillInstance) {
+      this.quillInstance.execCommand(command, value);
+    }
   }
 }

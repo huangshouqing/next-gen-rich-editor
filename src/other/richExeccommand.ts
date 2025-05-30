@@ -1,4 +1,4 @@
-import type EditorCore from "../js/core";
+import type { EditorCore } from "../js/core";
 import { execCommand } from "./execcommand.utils";
 import type { ExecCommandStyle } from "./interfaces";
 import { DeckdeckgoInlineEditorUtils, hexToRgb } from "./utils";

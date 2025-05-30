@@ -176,3 +176,32 @@
   cursor: pointer;
   display: inline-block;
 }
+
+/* KaTeX公式样式覆盖 */
+.katex {
+  font-size: 1.2em;
+  line-height: 1.2;
+  display: inline-block;
+  text-align: left;
+  white-space: nowrap;
+  padding: 0 4px;
+  
+  .base {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+  /* 公式行内显示 */
+  &.inline-formula {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 2px;
+  }
+  
+  /* 公式块级显示 */
+  &.display-formula {
+    display: block;
+    margin: 8px 0;
+    text-align: center;
+  }
+}

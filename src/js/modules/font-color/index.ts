@@ -1,4 +1,4 @@
-import type EditorCore from "../../core";
+import type { EditorCore } from "../../core";
 
 export default class FontColorModule {
   private editor: EditorCore;

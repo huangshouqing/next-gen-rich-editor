@@ -1,4 +1,4 @@
-import EditorCore from "../core";
+import { EditorCore } from "../core";
 export type ToolbarGroup = string[];
 export type ToolbarConfig = ToolbarGroup[];
 // 编辑器·
