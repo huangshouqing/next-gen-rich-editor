@@ -415,11 +415,11 @@
   z-index: 1000;
   cursor: nwse-resize;
   
-  // 动态尺寸适配
-  width: 12px;
-  height: 12px;
-  min-width: 6px;
-  min-height: 6px;
+  // 固定尺寸（解决缩放后大小不一致问题）
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
 
   &:hover {
     opacity: 1 !important;
@@ -430,7 +430,8 @@
   &[data-position="bottom-left"] { cursor: sw-resize; }
 }
 
-.ql-custom-image:hover .resize-handle {
+// 修改悬停显示逻辑（仅在激活状态显示）
+.ql-custom-image.active-resize .resize-handle {
   opacity: 0.8;
 }
 

@@ -1,16 +1,14 @@
 import { EditorCore } from "@/js/core/index";
 import "./image.scss";
 import "cropperjs/src/css/cropper.css";
-import ContextMenu from "../../utils/ContextMenu";
-
 import Cropper from "cropperjs";
-import { BlockEmbed } from "quill/blots/block";
 /**
  * 图片编辑器类，用于上传和插入图片到富文本中（支持弹窗上传）
  */
 export default class ImageModule {
   private editor: EditorCore;
-  private imageMenus = new Map<HTMLImageElement, ContextMenu>();
+  isResizing = false; // 开始调整时更新状态
+  isActive = false;
   constructor(editor: EditorCore) {
     this.editor = editor;
   }
@@ -218,8 +216,10 @@ export default class ImageModule {
     this.editor.restoreSelection(true);
     const quill = this.editor.quillInstance?.quill;
     if (!quill) return;
-    // 修改插入逻辑，在表格中插入时使用行内格式
-    const align = quill.getFormat(quill.getSelection(true).index)?.table ? "inline" : "inline";
+    
+    const align = quill.getFormat(quill.getSelection(true).index)?.table
+      ? "inline"
+      : "inline";
 
     quill.insertEmbed(
       quill.getSelection(true).index,
@@ -238,97 +238,21 @@ export default class ImageModule {
       cell.style.verticalAlign = "top"; // 确保表格单元格对齐方式
     }
 
-    // 新增：获取插入的blot节点并绑定事件
-    const [blot2] = quill.getLeaf(quill.getSelection(true).index);
-    const img = blot2.domNode.querySelector("img");
-    if (img) {
-      this.bindImageEvents(img);
-    }
-
+    this.editor.restoreSelection(true);
     quill.setSelection(quill.getSelection(true).index + 1, 0, "silent");
   }
 
-  /**
-   * 为单个图片绑定事件
-   */
-  private bindImageEvents(img: HTMLImageElement): void {
-    const blotContainer = img.closest(".ql-custom-image");
-    debugger;
-    if (!blotContainer) return;
-
-    // 创建尺寸调整句柄
-    const createHandle = (position: string) => {
-      const handle = document.createElement("div");
-      handle.className = "resize-handle";
-      handle.dataset.position = position;
-      handle.style.position = "absolute";
-      blotContainer.appendChild(handle);
-
-      // 绑定鼠标事件（新增事件绑定）
-      handle.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        this.startResize(blotContainer, position);
-      });
-    };
-
-    // 初始化四个方向的调整句柄（新增句柄创建逻辑）
-    ["top-left", "top-right", "bottom-left", "bottom-right"].forEach((pos) => {
-      createHandle(pos);
-    });
-
-    // 修复右键菜单绑定到 blot 容器
-    blotContainer.addEventListener("contextmenu", (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.showImageContextMenu(img, e);
-    });
-
-    // 动态计算句柄尺寸并重新定位
-    const updateHandlePosition = () => {
-      const handles =
-        blotContainer.querySelectorAll<HTMLElement>(".resize-handle");
-      handles.forEach((handle) => {
-        const position = handle.dataset.position!;
-        const offset = 6; // 根据图片尺寸动态调整偏移量
-        handle.style.width = handle.style.height = `${Math.max(
-          6,
-          img.offsetWidth * 0.05
-        )}px`;
-
-        switch (position) {
-          case "top-left":
-            handle.style.left = `${-offset}px`;
-            handle.style.top = `${-offset}px`;
-            break;
-          case "top-right":
-            handle.style.right = `${-offset}px`;
-            handle.style.top = `${-offset}px`;
-            break;
-          case "bottom-left":
-            handle.style.left = `${-offset}px`;
-            handle.style.bottom = `${-offset}px`;
-            break;
-          case "bottom-right":
-            handle.style.right = `${-offset}px`;
-            handle.style.bottom = `${-offset}px`;
-        }
-      });
-    };
-
-    // 初始化及尺寸变化时更新句柄
-    new ResizeObserver(updateHandlePosition).observe(img);
-    updateHandlePosition();
-  }
-
-  private startResize(container: HTMLElement, position: string) {
+  private startResize(
+    container: HTMLElement,
+    position: string,
+    minSize: number
+  ) {
+    // 现在minSize作为参数传入
     const img = container.querySelector("img")!;
-    const containerStartWidth = container.offsetWidth; // 改为使用容器初始尺寸
+    const containerStartWidth = container.offsetWidth;
     const containerStartHeight = container.offsetHeight;
     const startX = event.clientX;
     const startY = event.clientY;
-
-    // 新增尺寸限制
-    const minSize = 50;
 
     const doResize = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
@@ -365,6 +289,10 @@ export default class ImageModule {
     };
 
     const stopResize = () => {
+      this.isResizing = false; // 结束调整时重置状态
+      if (!this.isActive) {
+        blotContainer.classList.remove("active-resize");
+      }
       document.removeEventListener("mousemove", doResize);
       document.removeEventListener("mouseup", stopResize);
     };
@@ -378,93 +306,5 @@ export default class ImageModule {
    */
   private _closeDialog(dialog: HTMLDivElement): void {
     dialog.remove();
-  }
-
-  /**
-   * 创建右键弹框
-   * @param img
-   * @param event
-   * @returns
-   */
-  private showImageContextMenu(img: HTMLImageElement, event: MouseEvent): void {
-    const container = img.closest(".ql-custom-image");
-    const menuItems = [
-      {
-        label: "左对齐",
-        handler: () => {
-          // 修改：操作容器类名
-          container.classList.remove(
-            "image-align-center",
-            "image-align-right",
-            "image-align-inline"
-          );
-          container.classList.add("image-align-left");
-        },
-      },
-      {
-        label: "居中",
-        handler: () => {
-          container.classList.remove(
-            "image-align-left",
-            "image-align-right",
-            "image-align-inline"
-          );
-          container.classList.add("image-align-center");
-        },
-      },
-      {
-        label: "右对齐",
-        handler: () => {
-          container.classList.remove(
-            "image-align-left",
-            "image-align-center",
-            "image-align-inline"
-          );
-          container.classList.add("image-align-right");
-        },
-      },
-      {
-        label: "文字基线对齐",
-        handler: () => {
-          container.classList.remove(
-            "image-align-left",
-            "image-align-center",
-            "image-align-right"
-          );
-          container.classList.add("image-align-inline");
-        },
-      },
-      {
-        label: "删除图片",
-        handler: () => {
-          container.remove();
-        },
-      },
-    ];
-    // 全局隐藏所有已存在的上下文菜单
-    this.imageMenus.forEach((menu) => {
-      if (menu) {
-        menu.hide();
-      }
-    });
-
-    let contextMenu = this.imageMenus.get(img);
-    if (contextMenu) {
-      contextMenu.show(event.clientX, event.clientY); // 如果已存在菜单，直接复用并显示
-      return;
-    }
-    contextMenu = new ContextMenu(menuItems);
-    contextMenu.show(event.clientX, event.clientY);
-
-    // 修改菜单绑定逻辑
-    // const contextMenu = new ContextMenu(menuItems);
-    contextMenu.show(event.clientX, event.clientY);
-
-    // 绑定关闭事件到当前图片
-    const closeMenu = () => {
-      contextMenu.hide();
-      img.removeEventListener("click", closeMenu);
-    };
-    img.addEventListener("click", closeMenu);
   }
 }
