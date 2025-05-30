@@ -64,18 +64,8 @@ export class QuillModuleImpl {
         toolbar: false,
         "better-table": {
           operationMenu: {
-            items: {
-              unmergeCells: {
-                text: "Another unmerge cells name",
-              },
-            },
-
             color: {
               colors: [
-                "red",
-                "green",
-                "yellow",
-                "white",
                 "red",
                 "green",
                 "yellow",
@@ -150,6 +140,14 @@ export class QuillModuleImpl {
     }
 
     switch (quillCommand) {
+      case "insertImg":
+        this.quill.insertEmbed(
+          this.quill.getSelection().index,
+          "image",
+          value,
+          Quill.sources.USER
+        );
+        break;
       case "insertText":
         this.quill.insertText(
           this.quill.getSelection()?.index || 0,
@@ -298,15 +296,8 @@ export class QuillModuleImpl {
    */
   private initialize(): void {
     // 使用 Quill API 设置初始内容
-    this.quill.setContents([
-      { insert: "欢迎使用富文本编辑器\n" },
-      { insert: "这是第二行内容" },
-      { insert: "欢迎使用富文本编辑器\n" },
-      { insert: "欢迎使用富文本编辑器\n" },
-      { insert: "欢迎使用富文本编辑器\n" },
-    ]);
+    this.quill.setContents([]);
   }
-
   /**
    * 强制清理多余 DOM 结构
    * @param editor - 编辑器容器元素

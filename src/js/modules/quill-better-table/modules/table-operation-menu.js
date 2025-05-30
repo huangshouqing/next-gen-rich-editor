@@ -16,11 +16,11 @@ const MENU_MIN_HEIHGT = 150
 const MENU_WIDTH = 200
 const ERROR_LIMIT = 5
 const DEFAULT_CELL_COLORS = ['white', 'red', 'yellow', 'blue']
-const DEFAULT_COLOR_SUBTITLE = 'Background Colors'
+const DEFAULT_COLOR_SUBTITLE = '背景颜色'
 
 const MENU_ITEMS_DEFAULT = {
   insertColumnRight: {
-    text: 'Insert column right',
+    text: '右侧添加一列',
     iconSrc: operationIcon1,
     handler () {
       const tableContainer = Quill.find(this.table)
@@ -54,7 +54,7 @@ const MENU_ITEMS_DEFAULT = {
   },
 
   insertColumnLeft: {
-    text: 'Insert column left',
+    text: '左侧添加一列',
     iconSrc: operationIcon2,
     handler () {
       const tableContainer = Quill.find(this.table)
@@ -88,7 +88,7 @@ const MENU_ITEMS_DEFAULT = {
   },
 
   insertRowUp: {
-    text: 'Insert row up',
+    text: '向上插入一行',
     iconSrc: operationIcon3,
     handler () {
       const tableContainer = Quill.find(this.table)
@@ -111,7 +111,7 @@ const MENU_ITEMS_DEFAULT = {
   },
 
   insertRowDown: {
-    text: 'Insert row down',
+    text: '向下插入一行',
     iconSrc: operationIcon4,
     handler () {
       const tableContainer = Quill.find(this.table)
@@ -134,7 +134,7 @@ const MENU_ITEMS_DEFAULT = {
   },
 
   mergeCells: {
-    text: 'Merge selected cells',
+    text: '合并单元格',
     iconSrc: operationIcon5,
     handler () {
       const tableContainer = Quill.find(this.table)
@@ -184,7 +184,7 @@ const MENU_ITEMS_DEFAULT = {
   },
 
   unmergeCells: {
-    text: 'Unmerge cells',
+    text: '取消合并',
     iconSrc: operationIcon6,
     handler () {
       const tableContainer = Quill.find(this.table)
@@ -198,7 +198,7 @@ const MENU_ITEMS_DEFAULT = {
   },
 
   deleteColumn: {
-    text: 'Delete selected columns',
+    text: '删除列',
     iconSrc: operationIcon7,
     handler () {
       const tableContainer = Quill.find(this.table)
@@ -226,7 +226,7 @@ const MENU_ITEMS_DEFAULT = {
   },
 
   deleteRow: {
-    text: 'Delete selected rows',
+    text: '删除行',
     iconSrc: operationIcon8,
     handler () {
       const tableContainer = Quill.find(this.table)
@@ -240,7 +240,7 @@ const MENU_ITEMS_DEFAULT = {
   },
 
   deleteTable: {
-    text: 'Delete table',
+    text: '删除表格',
     iconSrc: operationIcon9,
     handler () {
       const betterTableModule = this.quill.getModule('better-table')

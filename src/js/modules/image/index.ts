@@ -228,46 +228,21 @@ export default class ImageModule {
   private insertImage(src: string): void {
     // 恢复选区
     this.editor.restoreSelection(true);
-    const img = document.createElement("img");
-    img.src = src;
-    img.classList.add("editable-image");
-    img.setAttribute("contenteditable", "false");
-    img.style.maxWidth = "100%";
-    img.style.height = "auto";
-    const editorContent =
-      this.editor.container?.querySelector(".editor-content");
-    if (!editorContent) {
-      console.error("无法找到 .editor-content 元素");
+
+    // 使用Quill的API插入图片
+    const quill = this.editor.quillInstance.quill;
+    if (!quill) {
+      console.error("Quill实例未找到");
       return;
     }
-    // 确保编辑区域有焦点
-    editorContent.focus();
-    // 获取当前选区
-    const selection = window.getSelection();
-    debugger;
-    const range = selection?.getRangeAt(0);
-    // 判断是否在表格单元格中
-    const parentCell = range?.startContainer.parentElement?.closest("td, th");
-    if (parentCell) {
-      debugger;
-      // 插入到单元格中
-      parentCell.appendChild(img);
-    } else if (range) {
-      // 原有插入逻辑
-      range.deleteContents();
-      range.insertNode(img);
-    } else {
-      editorContent.appendChild(img);
-    }
-
-    // 插入后恢复焦点
-    setTimeout(() => {
-      const editorContent =
-        this.editor.container?.querySelector(".editor-content");
-      if (editorContent) {
-        editorContent.focus();
-      }
-    }, 0);
+    // 获取当前选区位置
+    const range = quill.getSelection(true);
+    // 使用Quill的insertEmbed方法插入图片
+    quill.insertEmbed(range.index, "image", src, "user");
+    // 将选区移动到插入的图片之后
+    quill.setSelection(range.index + 1, 0, "silent");
+    // 触发内容更新
+    quill.update("user");
   }
 
   private initImageEvents(editorContent: Element): void {
