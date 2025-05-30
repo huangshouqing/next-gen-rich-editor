@@ -218,47 +218,61 @@ export default class ImageModule {
     this.editor.restoreSelection(true);
     const quill = this.editor.quillInstance?.quill;
     if (!quill) return;
+    // 修改插入逻辑，在表格中插入时使用行内格式
+    const align = quill.getFormat(quill.getSelection(true).index)?.table ? "inline" : "inline";
 
-    const range = quill.getSelection(true);
-    quill.insertEmbed(range.index, 'custom-image', {
-      src,
-      align: 'inline'
-    }, 'user');
+    quill.insertEmbed(
+      quill.getSelection(true).index,
+      "custom-image",
+      {
+        src,
+        align,
+      },
+      "user"
+    );
+    debugger;
+    // 新增表格插入兼容逻辑
+    const [blot] = quill.getLeaf(quill.getSelection(true).index);
+    if (blot && blot.domNode?.tagName === "TD") {
+      const cell = blot.domNode as HTMLTableCellElement;
+      cell.style.verticalAlign = "top"; // 确保表格单元格对齐方式
+    }
 
     // 新增：获取插入的blot节点并绑定事件
-    const [blot] = quill.getLeaf(range.index);
-    const img = blot.domNode.querySelector('img');
+    const [blot2] = quill.getLeaf(quill.getSelection(true).index);
+    const img = blot2.domNode.querySelector("img");
     if (img) {
       this.bindImageEvents(img);
     }
 
-    quill.setSelection(range.index + 1, 0, 'silent');
+    quill.setSelection(quill.getSelection(true).index + 1, 0, "silent");
   }
 
   /**
    * 为单个图片绑定事件
    */
   private bindImageEvents(img: HTMLImageElement): void {
-    const blotContainer = img.closest('.ql-custom-image');
+    const blotContainer = img.closest(".ql-custom-image");
+    debugger;
     if (!blotContainer) return;
 
     // 创建尺寸调整句柄
     const createHandle = (position: string) => {
-      const handle = document.createElement('div');
-      handle.className = 'resize-handle';
+      const handle = document.createElement("div");
+      handle.className = "resize-handle";
       handle.dataset.position = position;
-      handle.style.position = 'absolute';
+      handle.style.position = "absolute";
       blotContainer.appendChild(handle);
-      
+
       // 绑定鼠标事件（新增事件绑定）
-      handle.addEventListener('mousedown', (e) => {
+      handle.addEventListener("mousedown", (e) => {
         e.preventDefault();
         this.startResize(blotContainer, position);
       });
     };
 
     // 初始化四个方向的调整句柄（新增句柄创建逻辑）
-    ['top-left', 'top-right', 'bottom-left', 'bottom-right'].forEach(pos => {
+    ["top-left", "top-right", "bottom-left", "bottom-right"].forEach((pos) => {
       createHandle(pos);
     });
 
@@ -271,26 +285,30 @@ export default class ImageModule {
 
     // 动态计算句柄尺寸并重新定位
     const updateHandlePosition = () => {
-      const handles = blotContainer.querySelectorAll<HTMLElement>('.resize-handle');
-      handles.forEach(handle => {
+      const handles =
+        blotContainer.querySelectorAll<HTMLElement>(".resize-handle");
+      handles.forEach((handle) => {
         const position = handle.dataset.position!;
         const offset = 6; // 根据图片尺寸动态调整偏移量
-        handle.style.width = handle.style.height = `${Math.max(6, img.offsetWidth * 0.05)}px`;
-        
-        switch(position) {
-          case 'top-left':
+        handle.style.width = handle.style.height = `${Math.max(
+          6,
+          img.offsetWidth * 0.05
+        )}px`;
+
+        switch (position) {
+          case "top-left":
             handle.style.left = `${-offset}px`;
             handle.style.top = `${-offset}px`;
             break;
-          case 'top-right':
+          case "top-right":
             handle.style.right = `${-offset}px`;
             handle.style.top = `${-offset}px`;
             break;
-          case 'bottom-left':
+          case "bottom-left":
             handle.style.left = `${-offset}px`;
             handle.style.bottom = `${-offset}px`;
             break;
-          case 'bottom-right':
+          case "bottom-right":
             handle.style.right = `${-offset}px`;
             handle.style.bottom = `${-offset}px`;
         }
@@ -304,18 +322,18 @@ export default class ImageModule {
 
   private startResize(container: HTMLElement, position: string) {
     const img = container.querySelector("img")!;
-    const containerStartWidth = container.offsetWidth;  // 改为使用容器初始尺寸
+    const containerStartWidth = container.offsetWidth; // 改为使用容器初始尺寸
     const containerStartHeight = container.offsetHeight;
     const startX = event.clientX;
     const startY = event.clientY;
-    
+
     // 新增尺寸限制
     const minSize = 50;
-    
+
     const doResize = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
-      
+
       // 根据拖动方向计算新尺寸
       let newWidth = containerStartWidth;
       let newHeight = containerStartHeight;
@@ -342,8 +360,8 @@ export default class ImageModule {
       container.style.width = `${newWidth}px`;
       container.style.height = `${newHeight}px`;
       // 同步更新图片尺寸
-      img.style.width = '100%';
-      img.style.height = '100%';
+      img.style.width = "100%";
+      img.style.height = "100%";
     };
 
     const stopResize = () => {
@@ -369,7 +387,7 @@ export default class ImageModule {
    * @returns
    */
   private showImageContextMenu(img: HTMLImageElement, event: MouseEvent): void {
-    const container = img.closest('.ql-custom-image'); // 新增：获取容器元素
+    const container = img.closest(".ql-custom-image");
     const menuItems = [
       {
         label: "左对齐",
@@ -419,7 +437,7 @@ export default class ImageModule {
       {
         label: "删除图片",
         handler: () => {
-          img.remove();
+          container.remove();
         },
       },
     ];

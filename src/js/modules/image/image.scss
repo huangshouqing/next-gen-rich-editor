@@ -440,3 +440,19 @@
     display: none !important;
   }
 }
+
+// 新增行内图片特殊样式
+.inline-image {
+  vertical-align: text-bottom; // 与文字基线对齐
+  margin: 0 2px !important;
+  
+  // 表格内隐藏调整手柄
+  .resize-handle {
+    display: none !important;
+  }
+}
+
+.block-image {
+  clear: both;
+  margin: 8px 0;
+}
