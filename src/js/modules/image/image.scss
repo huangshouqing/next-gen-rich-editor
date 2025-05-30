@@ -311,3 +311,132 @@
   vertical-align: middle;
   margin: 2px 0;
 }
+
+/* 新增图片容器样式 */
+.image-container {
+  position: relative;
+  display: inline-block;
+  transition: all 0.2s;
+  border: 1px solid rgba(0, 123, 255, 0.3);
+  margin: 4px 0;
+
+  // 新增不可选中样式
+  user-select: none;
+  -webkit-user-select: none;
+  
+  // 限制最大宽度防止溢出
+  max-width: 100%;
+  
+  &[class*="image-align-"] {
+    clear: both;
+    margin: 8px 16px;
+    max-width: calc(100% - 32px); // 新增宽度限制
+  }
+
+  &.image-align-left {
+    float: left;
+    margin: 8px 16px 8px 0; // 调整间距
+    max-width: calc(100% - 16px);
+  }
+
+  &.image-align-right {
+    float: right;
+    margin: 8px 0 8px 16px; // 调整间距
+    max-width: calc(100% - 16px);
+  }
+
+  &.image-align-center {
+    float: none;
+    display: block;
+    margin: 8px auto;
+  }
+
+  // 新增不可编辑样式
+  &[contenteditable="false"] {
+    outline: none;
+    
+    &::before {
+      content: none !important;
+    }
+  }
+}
+
+// 修改容器选择器为 Blot 专用类名
+.ql-custom-image {
+  @extend .image-container;
+  display: inline-block;
+  
+  // 新增容器与图片同步样式
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none; // 防止图片接收事件影响容器操作
+  }
+}
+
+// 新增基础图片样式
+.editor-content img {
+  max-width: 100%;
+  height: auto;
+  vertical-align: bottom; // 消除图片底部间隙
+}
+
+// 表格内特殊样式
+.editor-content {
+  table td, table th {
+    .image-container {
+      float: none;
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      border: none;
+      margin: 2px 0;
+
+      // 表格内对齐方式
+      &.image-align-left { justify-content: flex-start; }
+      &.image-align-center { justify-content: center; }
+      &.image-align-right { justify-content: flex-end; }
+      
+      // 隐藏表格内的调整手柄
+      .resize-handle {
+        display: none;
+      }
+    }
+  }
+}
+
+.resize-handle {
+  position: absolute;
+  background: rgba(0, 123, 255, 0.8);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 1000;
+  cursor: nwse-resize;
+  
+  // 动态尺寸适配
+  width: 12px;
+  height: 12px;
+  min-width: 6px;
+  min-height: 6px;
+
+  &:hover {
+    opacity: 1 !important;
+  }
+
+  &[data-position="top-left"] { cursor: nw-resize; }
+  &[data-position="top-right"] { cursor: ne-resize; }
+  &[data-position="bottom-left"] { cursor: sw-resize; }
+}
+
+.ql-custom-image:hover .resize-handle {
+  opacity: 0.8;
+}
+
+// 表格内禁用调整
+.editor-content table td .ql-custom-image {
+  .resize-handle {
+    display: none !important;
+  }
+}

@@ -4,6 +4,7 @@ import "cropperjs/src/css/cropper.css";
 import ContextMenu from "../../utils/ContextMenu";
 
 import Cropper from "cropperjs";
+import { BlockEmbed } from "quill/blots/block";
 /**
  * 图片编辑器类，用于上传和插入图片到富文本中（支持弹窗上传）
  */
@@ -12,18 +13,6 @@ export default class ImageModule {
   private imageMenus = new Map<HTMLImageElement, ContextMenu>();
   constructor(editor: EditorCore) {
     this.editor = editor;
-  }
-  /**
-   * 初始化图片点击事件监听
-   */
-  public register() {
-    const editorContent =
-      this.editor.container?.querySelector(".editor-content");
-    if (editorContent) {
-      this.initImageEvents(editorContent);
-    } else {
-      console.warn("编辑器内容区域未找到，无法初始化图片事件");
-    }
   }
   /**
    * 打开图片插入弹窗
@@ -226,46 +215,146 @@ export default class ImageModule {
    * 插入图片到编辑器内容中
    */
   private insertImage(src: string): void {
-    // 恢复选区
     this.editor.restoreSelection(true);
+    const quill = this.editor.quillInstance?.quill;
+    if (!quill) return;
 
-    // 使用Quill的API插入图片
-    const quill = this.editor.quillInstance.quill;
-    if (!quill) {
-      console.error("Quill实例未找到");
-      return;
-    }
-    // 获取当前选区位置
     const range = quill.getSelection(true);
-    // 使用Quill的insertEmbed方法插入图片
-    quill.insertEmbed(range.index, "image", src, "user");
-    // 将选区移动到插入的图片之后
-    quill.setSelection(range.index + 1, 0, "silent");
-    // 触发内容更新
-    quill.update("user");
+    quill.insertEmbed(range.index, 'custom-image', {
+      src,
+      align: 'inline'
+    }, 'user');
+
+    // 新增：获取插入的blot节点并绑定事件
+    const [blot] = quill.getLeaf(range.index);
+    const img = blot.domNode.querySelector('img');
+    if (img) {
+      this.bindImageEvents(img);
+    }
+
+    quill.setSelection(range.index + 1, 0, 'silent');
   }
 
-  private initImageEvents(editorContent: Element): void {
-    editorContent.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === "IMG") {
-        // 只在非右键点击时触发恢复焦点等逻辑
-        const editorContent =
-          this.editor.container?.querySelector(".editor-content");
-        editorContent?.focus();
-      }
+  /**
+   * 为单个图片绑定事件
+   */
+  private bindImageEvents(img: HTMLImageElement): void {
+    const blotContainer = img.closest('.ql-custom-image');
+    if (!blotContainer) return;
+
+    // 创建尺寸调整句柄
+    const createHandle = (position: string) => {
+      const handle = document.createElement('div');
+      handle.className = 'resize-handle';
+      handle.dataset.position = position;
+      handle.style.position = 'absolute';
+      blotContainer.appendChild(handle);
+      
+      // 绑定鼠标事件（新增事件绑定）
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        this.startResize(blotContainer, position);
+      });
+    };
+
+    // 初始化四个方向的调整句柄（新增句柄创建逻辑）
+    ['top-left', 'top-right', 'bottom-left', 'bottom-right'].forEach(pos => {
+      createHandle(pos);
     });
 
-    editorContent.addEventListener("contextmenu", (e: Event) => {
-      const ev = e as MouseEvent; // 显式断言为 MouseEvent
-      const target = e.target as HTMLElement;
-      if (target.tagName === "IMG") {
-        e.preventDefault(); // 阻止默认右键菜单
-        e.stopPropagation();
-        this.showImageContextMenu(target as HTMLImageElement, ev);
-      }
+    // 修复右键菜单绑定到 blot 容器
+    blotContainer.addEventListener("contextmenu", (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.showImageContextMenu(img, e);
     });
+
+    // 动态计算句柄尺寸并重新定位
+    const updateHandlePosition = () => {
+      const handles = blotContainer.querySelectorAll<HTMLElement>('.resize-handle');
+      handles.forEach(handle => {
+        const position = handle.dataset.position!;
+        const offset = 6; // 根据图片尺寸动态调整偏移量
+        handle.style.width = handle.style.height = `${Math.max(6, img.offsetWidth * 0.05)}px`;
+        
+        switch(position) {
+          case 'top-left':
+            handle.style.left = `${-offset}px`;
+            handle.style.top = `${-offset}px`;
+            break;
+          case 'top-right':
+            handle.style.right = `${-offset}px`;
+            handle.style.top = `${-offset}px`;
+            break;
+          case 'bottom-left':
+            handle.style.left = `${-offset}px`;
+            handle.style.bottom = `${-offset}px`;
+            break;
+          case 'bottom-right':
+            handle.style.right = `${-offset}px`;
+            handle.style.bottom = `${-offset}px`;
+        }
+      });
+    };
+
+    // 初始化及尺寸变化时更新句柄
+    new ResizeObserver(updateHandlePosition).observe(img);
+    updateHandlePosition();
   }
+
+  private startResize(container: HTMLElement, position: string) {
+    const img = container.querySelector("img")!;
+    const containerStartWidth = container.offsetWidth;  // 改为使用容器初始尺寸
+    const containerStartHeight = container.offsetHeight;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    
+    // 新增尺寸限制
+    const minSize = 50;
+    
+    const doResize = (e: MouseEvent) => {
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      // 根据拖动方向计算新尺寸
+      let newWidth = containerStartWidth;
+      let newHeight = containerStartHeight;
+
+      switch (position) {
+        case "top-right":
+          newWidth = Math.max(minSize, containerStartWidth + deltaX);
+          newHeight = Math.max(minSize, containerStartHeight - deltaY);
+          break;
+        case "bottom-left":
+          newWidth = Math.max(minSize, containerStartWidth - deltaX);
+          newHeight = Math.max(minSize, containerStartHeight + deltaY);
+          break;
+        case "bottom-right":
+          newWidth = Math.max(minSize, containerStartWidth + deltaX);
+          newHeight = Math.max(minSize, containerStartHeight + deltaY);
+          break;
+        default: // top-left
+          newWidth = Math.max(minSize, containerStartWidth - deltaX);
+          newHeight = Math.max(minSize, containerStartHeight - deltaY);
+      }
+
+      // 同步更新容器尺寸
+      container.style.width = `${newWidth}px`;
+      container.style.height = `${newHeight}px`;
+      // 同步更新图片尺寸
+      img.style.width = '100%';
+      img.style.height = '100%';
+    };
+
+    const stopResize = () => {
+      document.removeEventListener("mousemove", doResize);
+      document.removeEventListener("mouseup", stopResize);
+    };
+
+    document.addEventListener("mousemove", doResize);
+    document.addEventListener("mouseup", stopResize);
+  }
+
   /**
    * 关闭弹窗
    */
@@ -280,37 +369,51 @@ export default class ImageModule {
    * @returns
    */
   private showImageContextMenu(img: HTMLImageElement, event: MouseEvent): void {
-    // 全局隐藏所有已存在的上下文菜单
-    this.imageMenus.forEach((menu) => {
-      if (menu) {
-        menu.hide();
-      }
-    });
+    const container = img.closest('.ql-custom-image'); // 新增：获取容器元素
     const menuItems = [
       {
         label: "左对齐",
         handler: () => {
-          img.style.float = "left";
-          img.style.marginRight = "10px";
-          img.style.marginLeft = "0";
-          img.style.display = "inline-block";
+          // 修改：操作容器类名
+          container.classList.remove(
+            "image-align-center",
+            "image-align-right",
+            "image-align-inline"
+          );
+          container.classList.add("image-align-left");
         },
       },
       {
         label: "居中",
         handler: () => {
-          img.style.float = "none";
-          img.style.display = "block";
-          img.style.margin = "10px auto";
+          container.classList.remove(
+            "image-align-left",
+            "image-align-right",
+            "image-align-inline"
+          );
+          container.classList.add("image-align-center");
         },
       },
       {
         label: "右对齐",
         handler: () => {
-          img.style.float = "right";
-          img.style.marginLeft = "10px";
-          img.style.marginRight = "0";
-          img.style.display = "inline-block";
+          container.classList.remove(
+            "image-align-left",
+            "image-align-center",
+            "image-align-inline"
+          );
+          container.classList.add("image-align-right");
+        },
+      },
+      {
+        label: "文字基线对齐",
+        handler: () => {
+          container.classList.remove(
+            "image-align-left",
+            "image-align-center",
+            "image-align-right"
+          );
+          container.classList.add("image-align-inline");
         },
       },
       {
@@ -320,6 +423,13 @@ export default class ImageModule {
         },
       },
     ];
+    // 全局隐藏所有已存在的上下文菜单
+    this.imageMenus.forEach((menu) => {
+      if (menu) {
+        menu.hide();
+      }
+    });
+
     let contextMenu = this.imageMenus.get(img);
     if (contextMenu) {
       contextMenu.show(event.clientX, event.clientY); // 如果已存在菜单，直接复用并显示
@@ -327,27 +437,16 @@ export default class ImageModule {
     }
     contextMenu = new ContextMenu(menuItems);
     contextMenu.show(event.clientX, event.clientY);
-    this.imageMenus.set(img, contextMenu);
-    // 绑定右键菜单事件
-    const contextMenuHandler = (e: MouseEvent) => {
-      e.preventDefault();
-      contextMenu.show(e.clientX, e.clientY);
+
+    // 修改菜单绑定逻辑
+    // const contextMenu = new ContextMenu(menuItems);
+    contextMenu.show(event.clientX, event.clientY);
+
+    // 绑定关闭事件到当前图片
+    const closeMenu = () => {
+      contextMenu.hide();
+      img.removeEventListener("click", closeMenu);
     };
-    img.addEventListener("contextmenu", contextMenuHandler);
-    // 点击其他地方关闭菜单
-    const documentClickHandler = (e: MouseEvent) => {
-      if (this.imageMenus.get(img)) {
-        contextMenu.hide();
-      }
-    };
-    document.addEventListener("click", documentClickHandler);
-    // 清理函数（当 img 被移除时自动执行）
-    const cleanup = () => {
-      contextMenu.destroy();
-      img.removeEventListener("contextmenu", contextMenuHandler);
-      document.removeEventListener("click", documentClickHandler);
-      this.imageMenus.delete(img);
-    };
-    img.addEventListener("remove", cleanup);
+    img.addEventListener("click", closeMenu);
   }
 }

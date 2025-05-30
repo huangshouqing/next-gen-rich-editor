@@ -7,6 +7,7 @@ import "../../css/quill.snow.css";
 import "../../css/quill-styles.css";
 // quill-better-table  css
 import "../modules/quill-better-table/assets/quill-better-table.scss";
+import CustomImageBlot from "../../js/modules/image/blot";
 
 // 注册 quill-better-table 模块
 Quill.register(
@@ -15,7 +16,7 @@ Quill.register(
   },
   true
 );
-
+Quill.register("formats/custom-image", CustomImageBlot);
 // 定义Quill模块接口
 export class QuillModuleImpl {
   public quill: Quill;
@@ -65,12 +66,7 @@ export class QuillModuleImpl {
         "better-table": {
           operationMenu: {
             color: {
-              colors: [
-                "red",
-                "green",
-                "yellow",
-                "white",
-              ],
+              colors: ["red", "green", "yellow", "white"],
             },
           },
         },
