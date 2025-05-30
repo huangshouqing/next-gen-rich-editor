@@ -139,7 +139,7 @@ export default class CustomImageBlot extends BlockEmbed {
     };
 
     // 鼠标进入/离开事件（改为具名函数）
-    blotContainer.addEventListener("mouseenter", mouseEnterHandler);
+    blotContainer.addEventListener("click", mouseEnterHandler);
     blotContainer.addEventListener("mouseleave", mouseLeaveHandler);
 
     // 调整句柄事件绑定
@@ -281,6 +281,18 @@ export default class CustomImageBlot extends BlockEmbed {
       }
       document.removeEventListener("mousemove", doResize);
       document.removeEventListener("mouseup", stopResize);
+      
+      // 新增失焦执行逻辑
+      requestAnimationFrame(() => {
+        const currentWidth = parseInt(container.style.width);
+        const currentHeight = parseInt(container.style.height);
+        if (!isNaN(currentWidth) && !isNaN(currentHeight)) {
+          // 触发尺寸更新事件
+          container.dispatchEvent(new CustomEvent('image-resized', {
+            detail: { width: currentWidth, height: currentHeight }
+          }));
+        }
+      });
     };
 
     document.addEventListener("mousemove", doResize);
