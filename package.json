@@ -24,7 +24,8 @@
     "eslint": "^9.27.0",
     "mathquill": "^0.10.1-a",
     "vite": "^6.3.5",
-    "vite-plugin-css": "^1.0.4"
+    "vite-plugin-css": "^1.0.4",
+    "vite-plugin-require-transform": "^1.0.21"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",

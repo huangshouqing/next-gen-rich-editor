@@ -24,6 +24,7 @@
     "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "esModuleInterop":true,
     "typeRoots": [
       "./src/js/types",
       "./node_modules/@types"

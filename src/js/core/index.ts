@@ -8,6 +8,8 @@ import {
 } from "../types/types";
 import { QuillModuleImpl } from "./quill";
 import "../../css/base.scss";
+import { Delta } from "quill";
+import str from "../examples/sample-content.js";
 
 export class EditorCore {
   public quillInstance: QuillModuleImpl | undefined;
@@ -51,12 +53,12 @@ export class EditorCore {
     this.config = config;
     this.container = document.querySelector(selector);
     this.modules = config.modules;
-    
+
     if (!this.container) {
       console.error(`Element with selector ${selector} not found.`);
       return;
     }
-    
+
     this.initNativeEditor(this.container);
     this.registerModules();
   }
@@ -135,12 +137,6 @@ export class EditorCore {
             break;
           //  表格
           case "insertTable":
-            // if (this.moduleInstances["TableModule"]) {
-            //   this.moduleInstances["TableModule"].openGridSelector?.();
-            //   this.moduleInstances["TableModule"].initRightClickMenu?.();
-            // } else {
-            //   console.warn("TableModule 模块未注入，请检查配置。");
-            // }
             this.quillInstance?.quill
               .getModule("better-table")
               .insertTable(3, 3);
@@ -160,39 +156,11 @@ export class EditorCore {
             break;
           case "insertSample":
             e.preventDefault();
-            this.setContent(`
-            <h2>欢迎使用富文本编辑器</h2>
-            <p>这是一个示例文本，演示如何通过 API 设置和获取编辑器内容。</p>
-            <ul>
-              <li>支持列表</li>
-              <li>支持表格</li>
-              <li>支持图片</li>
-            </ul>
-          `);
+            this.insertContent(str);
             break;
           case "toMarkdown":
             e.preventDefault();
-            const markdown = this.getMarkdown();
-            // 显示结果弹窗
-            const previewWindow = window.open("", "_blank");
-            if (previewWindow) {
-              previewWindow.document.write(`
-                <html>
-                  <head>
-                    <title>Markdown Preview</title>
-                    <style>
-                      body { 
-                        font-family: monospace;
-                        white-space: pre-wrap;
-                        padding: 20px;
-                        background: #f8f9fa;
-                      }
-                    </style>
-                  </head>
-                  <body>${markdown}</body>
-                </html>
-              `);
-            }
+            this.toMarkdown();
             break;
           default:
             //  处理其他命令
@@ -213,7 +181,9 @@ export class EditorCore {
       if (!this.root || !selection || selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
       if (this.root.contains(range.commonAncestorContainer)) {
-        this.debouncedSaveSelection();
+        this.debounce(() => {
+          this.saveSelection();
+        }, 200);
       }
     });
   }
@@ -231,17 +201,12 @@ export class EditorCore {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => {
         if (this.root) {
-          this.saveHistoryState(this.root.innerHTML);
+          // todo
         }
       }, 300);
     });
     // 初始化时保存初始状态
-    this.saveHistoryState(this.root.innerHTML);
   }
-  private debouncedSaveSelection = this.debounce(() => {
-    this.saveSelection();
-    console.log("选区变化，已保存当前范围", this.savedRange);
-  }, 200);
   private debounce<T extends (...args: any[]) => void>(
     fn: T,
     delay: number
@@ -336,20 +301,16 @@ export class EditorCore {
     }
   }
   /**
-   * 保存当前编辑器状态到历史记录
+   *  获取选区内容的 delta
+   * @returns delta
    */
-  public saveHistoryState(content: string): void {
-    // 如果不是在执行 undo/redo 操作时才保存
-    if (!this.isProcessing) {
-      // 清除当前指针之后的历史
-      this.history = this.history.slice(0, this.historyPointer + 1);
-
-      // 添加新状态
-      this.history.push(content);
-      this.historyPointer = this.history.length - 1;
-    }
+  getSelectContents(): { [key: string]: any } {
+    if (!this.container || !this.quillInstance) return {};
+    this.restoreSelection();
+    const { index, length } = this.quillInstance.quill.getSelection();
+    const contents = this.quillInstance.quill.getContents(index, length);
+    return contents;
   }
-
   // 以下是工具方法，提供给开发者使用
   /**
    * 获取编辑器当前内容（HTML）
@@ -357,14 +318,6 @@ export class EditorCore {
   public getContent(): string {
     if (!this.container || !this.root) return "";
     return this.root.innerHTML.trim();
-  }
-  /**
-   * 设置编辑器内容
-   * @param content - 要写入的 HTML 内容
-   */
-  public setContent(content: string): void {
-    if (!this.container || !this.root) return;
-    this.root.innerHTML = content;
   }
   /**
    * 获取纯文本内容
@@ -378,46 +331,69 @@ export class EditorCore {
    * @param html - 要插入的 HTML 内容
    */
   public insertContent(html: string): void {
-    if (!this.container) return;
-    this.restoreSelection();
-    const selection = window.getSelection();
-    const range = selection?.getRangeAt(0);
-    if (range) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      Array.from(doc.body.children).forEach((node) => {
-        range.insertNode(node.cloneNode(true));
-      });
-      // 更新选区到插入内容之后
-      range.collapse(false);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
+    if (!this.container || !this.quillInstance) return;
+    const quill = this.quillInstance.quill;
+    const delta = this.convertHtmlToDelta("224242");
+    try {
+      console.log("生成的delta:", delta);
+      if (delta.ops.length === 0) {
+        console.error("转换得到空delta，原始HTML:", html);
+        return;
+      }
+      quill.updateContents(
+        new Delta()
+          .retain(quill.getSelection()?.index || quill.getLength())
+          .concat(delta),
+        "user"
+      );
+    } catch (e) {
+      console.error("HTML转换delta失败:", e);
     }
+    const newPosition =
+      (quill.getSelection()?.index || quill.getLength()) + delta.length();
+    quill.setSelection(newPosition, 0);
   }
+
   /**
-   * 替换当前选中内容
-   * @param html - 新的 HTML 内容
+   * 将 Delta 转换为 HTML
+   * @param delta - Delta 对象
+   * @returns HTML 字符串
    */
-  public replaceSelection(html: string): void {
-    if (!this.container || !this.root) return;
-    this.restoreSelection();
-    const selection = window.getSelection();
-    const range = selection?.getRangeAt(0);
-    if (range) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      const fragment = document.createDocumentFragment();
-      Array.from(doc.body.children).forEach((node) => {
-        fragment.appendChild(node.cloneNode(true));
-      });
-      range.deleteContents();
-      range.insertNode(fragment);
-      // 更新选区到新插入的内容末尾
-      range.collapse(false);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
+  public convertDeltaToHtml = (delta: Delta) => {
+    const quill = this.quillInstance?.quill;
+    if (!quill) {
+      return console.warn("quill实例不存在");
     }
-  }
+    quill.setContents(delta);
+    return quill.root.innerHTML;
+  };
+
+  /**
+   * 将 HTML 转换为 Delta
+   * @param html - HTML 字符串
+   * @returns Delta 对象
+   */
+  public convertHtmlToDelta = (html) => {
+    const quill = this.quillInstance?.quill;
+    if (!quill) {
+      return console.warn("quill实例不存在");
+    }
+    debugger;
+    return quill.clipboard.convert(html);
+  };
+  /**
+   * 将纯文本转换为 Delta
+   * @param text - 纯文本字符串
+   * @returns Delta 对象
+   */
+  public convertTextToDelta = (text: string) => {
+    const quill = this.quillInstance?.quill;
+    if (!quill) {
+      return console.warn("quill实例不存在");
+    }
+    quill.setText(text);
+    return quill.getContents();
+  };
   /**
    * 将 HTML 字符串转换为 DOM 元素
    * @param htmlString - HTML 字符串
@@ -443,9 +419,31 @@ export class EditorCore {
     this.history = [];
     this.historyPointer = -1;
   }
-  public getMarkdown(): string {
+  public toMarkdown() {
     if (!this.container || !this.root) return "";
-    return this.moduleInstances["HtmlToMarkdown"].convert(this.root.innerHTML);
+    const markdown = this.moduleInstances["HtmlToMarkdown"].convert(
+      this.root.innerHTML
+    );
+    // 显示结果弹窗
+    const previewWindow = window.open("", "_blank");
+    if (previewWindow) {
+      previewWindow.document.write(`
+        <html>
+          <head>
+            <title>Markdown Preview</title>
+            <style>
+              body { 
+                font-family: monospace;
+                white-space: pre-wrap;
+                padding: 20px;
+                background: #f8f9fa;
+              }
+            </style>
+          </head>
+          <body>${markdown}</body>
+        </html>
+      `);
+    }
   }
   /**
    * 执行富文本命令

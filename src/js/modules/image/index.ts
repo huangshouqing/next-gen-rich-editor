@@ -261,6 +261,7 @@ export default class ImageModule {
       const target = e.target as HTMLElement;
       if (target.tagName === "IMG") {
         e.preventDefault(); // 阻止默认右键菜单
+        e.stopPropagation();
         this.showImageContextMenu(target as HTMLImageElement, ev);
       }
     });
