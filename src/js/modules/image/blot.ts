@@ -230,6 +230,11 @@ export default class CustomImageBlot extends BlockEmbed {
     const startX = (event as MouseEvent).clientX;
     const startY = (event as MouseEvent).clientY;
 
+    // 新增：获取原始宽高比
+    const naturalWidth = img.naturalWidth;
+    const naturalHeight = img.naturalHeight;
+    const aspectRatio = naturalWidth / naturalHeight;
+
     const doResize = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
@@ -240,20 +245,28 @@ export default class CustomImageBlot extends BlockEmbed {
       switch (position) {
         case "top-right":
           newWidth = Math.max(minSize, containerStartWidth + deltaX);
-          newHeight = Math.max(minSize, containerStartHeight - deltaY);
+          newHeight = newWidth / aspectRatio; // 按比例计算高度
           break;
         case "bottom-left":
-          newWidth = Math.max(minSize, containerStartWidth - deltaX);
           newHeight = Math.max(minSize, containerStartHeight + deltaY);
+          newWidth = newHeight * aspectRatio; // 按比例计算宽度
           break;
         case "bottom-right":
-          newWidth = Math.max(minSize, containerStartWidth + deltaX);
-          newHeight = Math.max(minSize, containerStartHeight + deltaY);
+          // 同时计算两个方向的差值，取较大值保持比例
+          const widthDelta = containerStartWidth + deltaX;
+          const heightDelta = containerStartHeight + deltaY;
+          const ratioDelta = Math.max(widthDelta / naturalWidth, heightDelta / naturalHeight);
+          newWidth = naturalWidth * ratioDelta;
+          newHeight = naturalHeight * ratioDelta;
           break;
         default: // top-left
           newWidth = Math.max(minSize, containerStartWidth - deltaX);
-          newHeight = Math.max(minSize, containerStartHeight - deltaY);
+          newHeight = newWidth / aspectRatio; // 按比例计算高度
       }
+
+      // 确保最终尺寸不小于最小值
+      newWidth = Math.max(minSize, newWidth);
+      newHeight = Math.max(minSize, newHeight);
 
       container.style.width = `${newWidth}px`;
       container.style.height = `${newHeight}px`;
