@@ -226,7 +226,7 @@ export default class ImageModule {
     debugger
     quill.insertEmbed(
       quill.getSelection(true).index,
-      'custom-inline-image',  // 确保使用正确的 blot 名称
+      blotname,  // 确保使用正确的 blot 名称
       {
         src,
         align,

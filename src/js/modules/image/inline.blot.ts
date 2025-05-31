@@ -1,7 +1,7 @@
 import InlineEmbed from "quill/blots/inline";
 import ContextMenu from "../../utils/ContextMenu";
-import './image.scss'
-import './inline.scss'; // 内联模式样式
+import "./image.scss";
+import "./inline.scss"; // 内联模式样式
 
 export default class CustomImageBlot extends InlineEmbed {
   static blotName = "custom-inline-image";
@@ -14,10 +14,11 @@ export default class CustomImageBlot extends InlineEmbed {
 
   static create(value: { src: string; align: string }) {
     const node = super.create();
-    // 修改样式类名以区分模式
     node.classList.add("image-container", `image-align-${value.align}`, "inline-mode");
     node.contentEditable = "false";
     node.style.position = "relative";
+    node.style.display = "inline-block"; // 保持内联特性
+    node.style.verticalAlign = "middle"; // 修复垂直对齐
     
     // 生成唯一ID并设置到容器
     const containerId = `image-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -26,22 +27,53 @@ export default class CustomImageBlot extends InlineEmbed {
     const img = document.createElement("img");
     img.className = "image-content";
     img.src = value.src;
-    node.appendChild(img);
+    img.style.display = "block"; // 避免底部空白
+    
+    // 创建独立的包裹容器
+    const wrapper = document.createElement("span");
+    wrapper.className = "image-wrapper";
+    wrapper.style.position = "relative";
+    wrapper.style.display = "inline-block";
+    wrapper.style.maxWidth = "100%";
+    
+    // 结构优化：先包裹再插入
+    wrapper.appendChild(img);
+    node.appendChild(wrapper);
     
     // 抽离创建句柄逻辑
     this.createResizeHandles(containerId);
 
-    img.onload = () => {
-      node.style.width = img.naturalWidth + "px";
-      node.style.height = img.naturalHeight + "px";
+    // 图片加载完成后的尺寸处理
+    const handleImageLoad = () => {
+      if (!img.naturalWidth) return; // 防止重复触发
+      
+      // 设置容器为图片原始尺寸
+      node.style.width = "auto";
+      node.style.maxWidth = "100%";
+      node.style.height = "auto";
+      
+      // 设置图片为100%尺寸
       img.style.width = "100%";
-      img.style.height = "100%";
+      img.style.height = "auto";
+      
       // 延迟执行确保布局更新
       requestAnimationFrame(() => {
         this.bindImageEvents(node, img);
         this.syncHandlesPosition(node);
       });
     };
+
+    // 处理图片加载
+    if (img.complete && img.naturalWidth !== 0) {
+      handleImageLoad();
+    } else {
+      img.addEventListener('load', handleImageLoad);
+      img.addEventListener('error', () => {
+        console.error('Image load failed:', img.src);
+        node.remove(); // 加载失败移除容器
+      });
+    }
+    
     return node;
   }
 
@@ -60,32 +92,33 @@ export default class CustomImageBlot extends InlineEmbed {
 
   // 新增句柄位置同步方法
   private static syncHandlesPosition(container: HTMLElement) {
-    const editorRoot = document.querySelector('.editor-content');
+    const editorRoot = document.querySelector(".editor-content");
     if (!editorRoot) return;
 
     // 新增对齐方式变化监听
     const mutationObserver = new MutationObserver(() => {
       this.updateHandlePositions(container);
     });
-    mutationObserver.observe(container, { 
+    mutationObserver.observe(container, {
       attributes: true,
-      attributeFilter: ['class'] 
+      attributeFilter: ["class"],
     });
 
     // 统一更新位置逻辑
     this.updateHandlePositions(container);
-    
+
     // 监听滚动事件更新位置
-    const scrollHandler = () => requestAnimationFrame(() => this.updateHandlePositions(container));
-    window.addEventListener('scroll', scrollHandler, true);
+    const scrollHandler = () =>
+      requestAnimationFrame(() => this.updateHandlePositions(container));
+    window.addEventListener("scroll", scrollHandler, true);
   }
 
   private static updateHandlePositions(container: HTMLElement) {
     const editorRoot = document.querySelector('.editor-content');
-    if (!container.isConnected) return;
+    if (!container.isConnected || !container.offsetParent) return;
 
     const rect = container.getBoundingClientRect();
-    const offset = 3; // 改为句柄半径的一半
+    const offset = 3; // 句柄半径的一半
     const scrollLeft = editorRoot?.scrollLeft || 0;
     const scrollTop = editorRoot?.scrollTop || 0;
     
@@ -93,6 +126,13 @@ export default class CustomImageBlot extends InlineEmbed {
       const pos = handle.dataset.position;
       const handleWidth = handle.offsetWidth / 2;
       const handleHeight = handle.offsetHeight / 2;
+      
+      // 获取图片实际尺寸
+      const img = container.querySelector('img');
+      if (!img) return;
+      
+      const imgRect = img.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
       
       switch (pos) {
         case "top-left":
@@ -194,35 +234,31 @@ export default class CustomImageBlot extends InlineEmbed {
     img: HTMLImageElement
   ) {
     const minSize = 50;
-
-    // 创建事件处理器以便后续移除
-    const mouseEnterHandler = () => {
-      this.prototype.isActive = true;
-      blotContainer.classList.add("active-resize");
-      // 显示所有关联的外部句柄
-      document.querySelectorAll(`[data-image-id="${blotContainer.id}"]`).forEach(handle => {
+    
+    // 用于存储当前激活的句柄元素
+    let activeHandles: NodeListOf<HTMLElement> | null = null;
+    
+    // 点击容器显示句柄
+    const containerClickHandler = () => {
+      activeHandles = document.querySelectorAll<HTMLElement>(`[data-image-id="${blotContainer.id}"]`);
+      activeHandles.forEach(handle => {
         handle.classList.add('show-handle');
       });
     };
     
-    const mouseLeaveHandler = () => {
-      if (!this.prototype.isResizing) {
-        this.prototype.isActive = false;
-        blotContainer.classList.remove("active-resize");
-        // 隐藏所有关联的外部句柄
-        document.querySelectorAll(`[data-image-id="${blotContainer.id}"]`).forEach(handle => {
+    // 点击外部区域隐藏句柄
+    const documentClickHandler = (e: MouseEvent) => {
+      if (!blotContainer.contains(e.target as Node)) {
+        document.querySelectorAll<HTMLElement>(`[data-image-id="${blotContainer.id}"]`).forEach(handle => {
           handle.classList.remove('show-handle');
         });
       }
     };
 
-    // 鼠标进入/离开事件（改为具名函数）
-    blotContainer.addEventListener("mouseenter", mouseEnterHandler);
-    blotContainer.addEventListener("mouseleave", mouseLeaveHandler);
-
-    // 调整句柄事件绑定
+    // 拖拽开始事件
     const handleMouseDown = (e: Event) => {
       e.preventDefault();
+      e.stopPropagation();
       this.prototype.isResizing = true;
       this.prototype.startResize(
         blotContainer,
@@ -230,14 +266,20 @@ export default class CustomImageBlot extends InlineEmbed {
         minSize
       );
     };
-    blotContainer.querySelectorAll(".resize-handle").forEach((handle) => {
-      handle.addEventListener("mousedown", handleMouseDown);
+
+    // 添加事件监听器
+    blotContainer.addEventListener('click', containerClickHandler);
+    document.addEventListener('click', documentClickHandler);
+    
+    // 绑定拖拽事件到外部句柄
+    document.querySelectorAll<HTMLElement>(`[data-image-id="${blotContainer.id}"]`).forEach(handle => {
+      handle.addEventListener('mousedown', handleMouseDown);
     });
 
     // 动态计算句柄位置
     const updateHandlePosition = () => {
       const handles =
-        blotContainer.querySelectorAll<HTMLElement>(".resize-handle");
+        blotContainer.querySelectorAll<HTMLElement>('.resize-handle');
       handles.forEach((handle) => {
         const position = handle.dataset.position!;
         const offset = 6;
@@ -265,9 +307,10 @@ export default class CustomImageBlot extends InlineEmbed {
         }
       });
     };
+    
     const resizeObserver = new ResizeObserver(updateHandlePosition);
     resizeObserver.observe(img);
-
+    
     // 右键菜单事件
     const contextMenuHandler = (e: MouseEvent) => {
       e.preventDefault();
@@ -276,23 +319,22 @@ export default class CustomImageBlot extends InlineEmbed {
     };
     blotContainer.addEventListener("contextmenu", contextMenuHandler);
 
-    // 图片移除时清理逻辑
+    // 清理逻辑
     const observer = new MutationObserver(() => {
       if (!document.contains(img)) {
         // 清理事件监听
-        blotContainer.removeEventListener("mouseenter", mouseEnterHandler);
-        blotContainer.removeEventListener("mouseleave", mouseLeaveHandler);
-        blotContainer.querySelectorAll(".resize-handle").forEach((handle) => {
-          handle.removeEventListener("mousedown", handleMouseDown);
-        });
-        blotContainer.removeEventListener("contextmenu", contextMenuHandler);
-        resizeObserver.disconnect();
-
-        // 新增清理外部调整句柄逻辑
-        editorRoot?.querySelectorAll(`[data-image-id="${container.id}"]`).forEach(handle => {
+        blotContainer.removeEventListener('click', containerClickHandler);
+        document.removeEventListener('click', documentClickHandler);
+        blotContainer.removeEventListener('contextmenu', contextMenuHandler);
+        
+        // 清理句柄事件
+        document.querySelectorAll<HTMLElement>(`[data-image-id="${blotContainer.id}"]`).forEach(handle => {
+          handle.removeEventListener('mousedown', handleMouseDown);
           handle.remove();
         });
-
+        
+        resizeObserver.disconnect();
+        
         // 清理菜单实例
         CustomImageBlot.imageMenus.get(img)?.hide();
         CustomImageBlot.imageMenus.delete(img);
@@ -314,7 +356,7 @@ export default class CustomImageBlot extends InlineEmbed {
     const startX = (event as MouseEvent).clientX;
     const startY = (event as MouseEvent).clientY;
 
-    // 新增：获取原始宽高比
+    // 获取原始宽高比
     const naturalWidth = img.naturalWidth;
     const naturalHeight = img.naturalHeight;
     const aspectRatio = naturalWidth / naturalHeight;
@@ -326,17 +368,17 @@ export default class CustomImageBlot extends InlineEmbed {
       let newWidth = containerStartWidth;
       let newHeight = containerStartHeight;
 
+      // 根据不同方向调整尺寸并保持比例
       switch (position) {
         case "top-right":
           newWidth = Math.max(minSize, containerStartWidth + deltaX);
-          newHeight = newWidth / aspectRatio; // 按比例计算高度
+          newHeight = newWidth / aspectRatio;
           break;
         case "bottom-left":
           newHeight = Math.max(minSize, containerStartHeight + deltaY);
-          newWidth = newHeight * aspectRatio; // 按比例计算宽度
+          newWidth = newHeight * aspectRatio;
           break;
         case "bottom-right":
-          // 同时计算两个方向的差值，取较大值保持比例
           const widthDelta = containerStartWidth + deltaX;
           const heightDelta = containerStartHeight + deltaY;
           const ratioDelta = Math.max(
@@ -346,12 +388,12 @@ export default class CustomImageBlot extends InlineEmbed {
           newWidth = naturalWidth * ratioDelta;
           newHeight = naturalHeight * ratioDelta;
           break;
-        default: // top-left
+        default:
           newWidth = Math.max(minSize, containerStartWidth - deltaX);
-          newHeight = newWidth / aspectRatio; // 按比例计算高度
+          newHeight = newWidth / aspectRatio;
       }
 
-      // 确保最终尺寸不小于最小值
+      // 应用新尺寸
       newWidth = Math.max(minSize, newWidth);
       newHeight = Math.max(minSize, newHeight);
 
@@ -359,6 +401,12 @@ export default class CustomImageBlot extends InlineEmbed {
       container.style.height = `${newHeight}px`;
       img.style.width = "100%";
       img.style.height = "100%";
+
+      // 实时更新句柄位置
+      requestAnimationFrame(() => {
+        CustomImageBlot.syncHandlesPosition(container);
+        CustomImageBlot.updateHandlePositions(container);
+      });
     };
 
     const stopResize = () => {
@@ -369,12 +417,14 @@ export default class CustomImageBlot extends InlineEmbed {
       document.removeEventListener("mousemove", doResize);
       document.removeEventListener("mouseup", stopResize);
 
-      // 新增失焦执行逻辑
+      // 移除文档级别的样式修改
+      document.body.style.cursor = "";
+
+      // 触发尺寸更新事件
       requestAnimationFrame(() => {
         const currentWidth = parseInt(container.style.width);
         const currentHeight = parseInt(container.style.height);
         if (!isNaN(currentWidth) && !isNaN(currentHeight)) {
-          // 触发尺寸更新事件
           container.dispatchEvent(
             new CustomEvent("image-resized", {
               detail: { width: currentWidth, height: currentHeight },
