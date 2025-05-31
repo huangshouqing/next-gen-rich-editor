@@ -315,7 +315,7 @@
 /* 新增图片容器样式 */
 .image-container {
   position: relative;
-  display: inline-block;
+  display: inline-block; // 确保行内块级布局
   transition: all 0.2s;
   border: 1px solid rgba(0, 123, 255, 0.3);
   margin: 4px 0;
