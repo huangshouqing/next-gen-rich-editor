@@ -179,7 +179,7 @@ export default class CustomImageBlot extends InlineEmbed {
       });
   }
 
-  // 新增右键菜单处理逻辑
+  // 修改右键菜单项实现
   private static showImageContextMenu(
     img: HTMLImageElement,
     event: MouseEvent
@@ -221,7 +221,7 @@ export default class CustomImageBlot extends InlineEmbed {
         },
       },
       {
-        label: "文字基线对齐",
+        label: "独占一行",
         handler: () => {
           container.classList.remove(
             "image-align-left",
@@ -229,6 +229,33 @@ export default class CustomImageBlot extends InlineEmbed {
             "image-align-right"
           );
           container.classList.add("image-align-inline");
+        },
+      },
+      {
+        label: "铺满宽度",
+        handler: () => {
+          // 移除其他对齐方式并应用铺满样式
+          container.classList.remove(
+            "image-align-left",
+            "image-align-center",
+            "image-align-right",
+            "image-align-inline"
+          );
+          
+          // 添加铺满类名
+          container.classList.add("image-align-fill");
+          
+          // 应用样式
+          container.style.width = "100%";
+          const currentImg = container.querySelector("img")!;
+          currentImg.style.width = "100%";
+          currentImg.style.height = "auto";
+          
+          // 强制更新句柄位置
+          requestAnimationFrame(() => {
+            this.syncHandlesPosition(container);
+            this.updateHandlePositions(container);
+          });
         },
       },
       {
@@ -339,6 +366,7 @@ export default class CustomImageBlot extends InlineEmbed {
     container.classList.add("resizing");
   }
 
+  // 在bindImageEvents中添加容器变化监听
   private static bindImageEvents(
     blotContainer: HTMLElement,
     img: HTMLImageElement
@@ -406,16 +434,14 @@ export default class CustomImageBlot extends InlineEmbed {
         });
       });
 
-    // 新增ResizeObserver配置
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === img) {
-          requestAnimationFrame(() => {
-            // 图片尺寸变化时强制更新所有关联句柄
-            this.syncHandlesPosition(blotContainer);
-            this.updateHandlePositions(blotContainer);
-          });
-        }
+    // 新增尺寸变化监听器
+    const resizeObserver = new ResizeObserver(() => {
+      // 当容器被铺满时保持比例更新
+      if (blotContainer.style.width === "100%") {
+        requestAnimationFrame(() => {
+          this.syncHandlesPosition(blotContainer);
+          this.updateHandlePositions(blotContainer);
+        });
       }
     });
     resizeObserver.observe(img);
@@ -429,6 +455,25 @@ export default class CustomImageBlot extends InlineEmbed {
     };
     window.addEventListener("resize", windowResizeHandler);
 
+    // 监听容器属性变化
+    const mutationObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "attributes" && mutation.attributeName === "style") {
+          // 当宽度变为100%时强制更新布局
+          if (blotContainer.style.width === "100%") {
+            requestAnimationFrame(() => {
+              this.syncHandlesPosition(blotContainer);
+              this.updateHandlePositions(blotContainer);
+            });
+          }
+        }
+      }
+    });
+    
+    mutationObserver.observe(blotContainer, {
+      attributes: true
+    });
+    
     // 清理逻辑新增
     const observer = new MutationObserver(() => {
       if (!document.contains(img)) {
@@ -443,6 +488,12 @@ export default class CustomImageBlot extends InlineEmbed {
           .forEach((handle) => {
             handle.removeEventListener("mouseenter", () => {});
           });
+
+        // 清理尺寸变化监听
+        resizeObserver.disconnect();
+        
+        // 清理mutationObserver
+        mutationObserver.disconnect();
       }
     });
     observer.observe(blotContainer, { childList: true, subtree: true });

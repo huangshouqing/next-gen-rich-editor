@@ -18,19 +18,23 @@
   max-width: 100%;
 
   &.inline-mode {
-    // 内联模式特定样式
-    .resize-handle {
-      position: fixed !important;
-      transform: translate(-50%, -50%);
-      z-index: 9999;
+    // 铺满宽度时的特殊样式
+    &.image-align-fill {
+      width: 100%;
+
+      .image-content {
+        width: 100%;
+        height: auto;
+      }
     }
   }
 }
+
 // inline的句柄
 .external-resize-handle {
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
   background-color: #1976d2;
   z-index: 9999;
   cursor: nwse-resize !important;
@@ -42,6 +46,10 @@
 
   &.show-handle {
     opacity: 1;
+  }
+  // 铺满模式下调整句柄定位逻辑
+  &[data-position][style*="width: 100%"] {
+    transform: translate(-50%, -50%);
   }
 }
 // 表格内特殊处理图片容器

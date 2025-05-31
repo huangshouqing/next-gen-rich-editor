@@ -86,7 +86,7 @@ export default class CustomImageBlot extends BlockEmbed {
         },
       },
       {
-        label: "文字基线对齐",
+        label: "独占一行",
         handler: () => {
           container.classList.remove(
             "image-align-left",

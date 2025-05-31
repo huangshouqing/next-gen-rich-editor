@@ -11,6 +11,7 @@ export default class ContextMenu {
     this.menu.style.borderRadius = "4px";
     this.menu.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
     this.menu.style.fontSize = "14px";
+    this.menu.style.minWidth = "110px";
     this.menu.style.display = "none";
 
     items.forEach((item) => {
