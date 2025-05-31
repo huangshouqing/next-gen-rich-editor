@@ -226,14 +226,14 @@ export default class ImageModule {
     debugger
     quill.insertEmbed(
       quill.getSelection(true).index,
-      'custom-inline-image',
+      'custom-inline-image',  // 确保使用正确的 blot 名称
       {
         src,
         align,
       },
       "user"
     );
-    debugger
+
     // 新增表格插入兼容逻辑
     const [blot] = quill.getLeaf(quill.getSelection(true).index);
     if (blot && blot.domNode?.tagName === "TD") {

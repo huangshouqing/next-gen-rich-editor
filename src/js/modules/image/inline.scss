@@ -1,0 +1,27 @@
+.resize-handle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background-color: #1976d2;
+  border-radius: 50%;
+  z-index: 9999;
+  cursor: nwse-resize;
+  pointer-events: auto;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  
+  &.external-resize-handle {
+    position: fixed !important;
+    transform: translate(-50%, -50%);
+  }
+  
+  &.show-handle {
+    opacity: 1;
+  }
+}
+
+// 悬停时显示句柄（备用方案）
+.image-container:hover .resize-handle {
+  opacity: 1;
+}

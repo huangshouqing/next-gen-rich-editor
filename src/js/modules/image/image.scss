@@ -406,33 +406,29 @@
   }
 }
 
-.resize-handle {
-  position: absolute;
+// 修改手柄样式为外部定位
+.external-resize-handle {
+  position: fixed !important;
   background: rgba(0, 123, 255, 0.8);
   border-radius: 2px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 1000;
-  cursor: nwse-resize;
-  
-  // 固定尺寸（解决缩放后大小不一致问题）
   width: 12px !important;
   height: 12px !important;
-  min-width: 12px !important;
-  min-height: 12px !important;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 10000;
+  pointer-events: none;
 
-  &:hover {
-    opacity: 1 !important;
+  // 新增对齐方式适配
+  [class*="image-align-"] & {
+    opacity: 0.8;
+    pointer-events: auto;
   }
 
+  // 保持原有光标样式
   &[data-position="top-left"] { cursor: nw-resize; }
   &[data-position="top-right"] { cursor: ne-resize; }
   &[data-position="bottom-left"] { cursor: sw-resize; }
-}
-
-// 修改悬停显示逻辑（仅在激活状态显示）
-.ql-custom-image.active-resize .resize-handle {
-  opacity: 0.8;
+  &[data-position="bottom-right"] { cursor: se-resize; }
 }
 
 // 表格内禁用调整
