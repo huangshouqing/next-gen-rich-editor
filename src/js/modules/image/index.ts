@@ -216,21 +216,24 @@ export default class ImageModule {
     this.editor.restoreSelection(true);
     const quill = this.editor.quillInstance?.quill;
     if (!quill) return;
-    
+
     const align = quill.getFormat(quill.getSelection(true).index)?.table
       ? "inline"
       : "inline";
-
+    const blotname = quill.getFormat(quill.getSelection(true).index)?.['table-cell-line']
+      ? "custom-inline-image"
+      : "custom-image";
+    debugger
     quill.insertEmbed(
       quill.getSelection(true).index,
-      "custom-image",
+      'custom-inline-image',
       {
         src,
         align,
       },
       "user"
     );
-    debugger;
+    debugger
     // 新增表格插入兼容逻辑
     const [blot] = quill.getLeaf(quill.getSelection(true).index);
     if (blot && blot.domNode?.tagName === "TD") {
@@ -242,64 +245,6 @@ export default class ImageModule {
     quill.setSelection(quill.getSelection(true).index + 1, 0, "silent");
   }
 
-  private startResize(
-    container: HTMLElement,
-    position: string,
-    minSize: number
-  ) {
-    // 现在minSize作为参数传入
-    const img = container.querySelector("img")!;
-    const containerStartWidth = container.offsetWidth;
-    const containerStartHeight = container.offsetHeight;
-    const startX = event.clientX;
-    const startY = event.clientY;
-
-    const doResize = (e: MouseEvent) => {
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-
-      // 根据拖动方向计算新尺寸
-      let newWidth = containerStartWidth;
-      let newHeight = containerStartHeight;
-
-      switch (position) {
-        case "top-right":
-          newWidth = Math.max(minSize, containerStartWidth + deltaX);
-          newHeight = Math.max(minSize, containerStartHeight - deltaY);
-          break;
-        case "bottom-left":
-          newWidth = Math.max(minSize, containerStartWidth - deltaX);
-          newHeight = Math.max(minSize, containerStartHeight + deltaY);
-          break;
-        case "bottom-right":
-          newWidth = Math.max(minSize, containerStartWidth + deltaX);
-          newHeight = Math.max(minSize, containerStartHeight + deltaY);
-          break;
-        default: // top-left
-          newWidth = Math.max(minSize, containerStartWidth - deltaX);
-          newHeight = Math.max(minSize, containerStartHeight - deltaY);
-      }
-
-      // 同步更新容器尺寸
-      container.style.width = `${newWidth}px`;
-      container.style.height = `${newHeight}px`;
-      // 同步更新图片尺寸
-      img.style.width = "100%";
-      img.style.height = "100%";
-    };
-
-    const stopResize = () => {
-      this.isResizing = false; // 结束调整时重置状态
-      if (!this.isActive) {
-        blotContainer.classList.remove("active-resize");
-      }
-      document.removeEventListener("mousemove", doResize);
-      document.removeEventListener("mouseup", stopResize);
-    };
-
-    document.addEventListener("mousemove", doResize);
-    document.addEventListener("mouseup", stopResize);
-  }
 
   /**
    * 关闭弹窗
