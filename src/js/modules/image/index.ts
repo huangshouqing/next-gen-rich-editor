@@ -1,7 +1,9 @@
 import { EditorCore } from "@/js/core/index";
-import "./image.scss";
 import "cropperjs/src/css/cropper.css";
 import Cropper from "cropperjs";
+import './base.scss'
+import "./block.scss";
+import "./inline.scss";
 /**
  * 图片编辑器类，用于上传和插入图片到富文本中（支持弹窗上传）
  */
@@ -220,13 +222,15 @@ export default class ImageModule {
     const align = quill.getFormat(quill.getSelection(true).index)?.table
       ? "inline"
       : "inline";
-    const blotname = quill.getFormat(quill.getSelection(true).index)?.['table-cell-line']
+    const blotname = quill.getFormat(quill.getSelection(true).index)?.[
+      "table-cell-line"
+    ]
       ? "custom-inline-image"
       : "custom-image";
-    debugger
+    debugger;
     quill.insertEmbed(
       quill.getSelection(true).index,
-      blotname,  // 确保使用正确的 blot 名称
+      blotname, // 确保使用正确的 blot 名称
       {
         src,
         align,
@@ -244,7 +248,6 @@ export default class ImageModule {
     this.editor.restoreSelection(true);
     quill.setSelection(quill.getSelection(true).index + 1, 0, "silent");
   }
-
 
   /**
    * 关闭弹窗

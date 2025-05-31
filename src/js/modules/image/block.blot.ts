@@ -162,10 +162,6 @@ export default class CustomImageBlot extends BlockEmbed {
       handles.forEach((handle) => {
         const position = handle.dataset.position!;
         const offset = 6;
-        handle.style.width = handle.style.height = `${Math.max(
-          6,
-          img.offsetWidth * 0.05
-        )}px`;
 
         switch (position) {
           case "top-left":

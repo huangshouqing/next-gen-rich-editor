@@ -1,7 +1,5 @@
 import InlineEmbed from "quill/blots/inline";
 import ContextMenu from "../../utils/ContextMenu";
-import './base.scss'
-import './inline.scss'
 export default class CustomImageBlot extends InlineEmbed {
   static blotName = "custom-inline-image";
   static tagName = "p";
@@ -107,7 +105,7 @@ export default class CustomImageBlot extends InlineEmbed {
     const positions = ["top-left", "top-right", "bottom-left", "bottom-right"];
     positions.forEach((pos) => {
       const handle = document.createElement("div");
-      handle.className = "resize-handle";
+      handle.className = "external-resize-handle";
       handle.dataset.position = pos;
       // 统一使用data-image-id属性
       handle.dataset.imageId = containerId;

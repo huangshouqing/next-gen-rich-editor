@@ -2,7 +2,7 @@
   position: relative;
   display: inline-block;
   max-width: 100%;
-  
+
   img {
     display: block;
     width: 100%;
@@ -16,7 +16,7 @@
   position: relative;
   display: inline-block;
   max-width: 100%;
-  
+
   &.inline-mode {
     // 内联模式特定样式
     .resize-handle {
@@ -26,36 +26,51 @@
     }
   }
 }
-
-.resize-handle {
+// inline的句柄
+.external-resize-handle {
   position: absolute;
   width: 8px;
   height: 8px;
   background-color: #1976d2;
-  border-radius: 50%;
   z-index: 9999;
   cursor: nwse-resize !important;
   pointer-events: auto;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
   opacity: 0;
   transition: all 0.2s ease;
-  
-  &.external-resize-handle {
-    position: fixed !important;
-    transform: translate(-50%, -50%);
-  }
-  
+  transform: translate(-50%, -50%);
+
   &.show-handle {
     opacity: 1;
   }
-  
-  &:hover {
-    background-color: #0d47a1;
-    transform: translate(-50%, -50%) scale(1.2);
-  }
 }
+// 表格内特殊处理图片容器
+.editor-content {
+  table td,
+  table th {
+    .image-container {
+      float: none;
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      border: none;
+      margin: 2px 0;
 
-// 悬停时显示句柄（备用方案）
-.image-container:hover .resize-handle {
-  opacity: 1;
+      // 表格内对齐方式
+      &.image-align-left {
+        justify-content: flex-start;
+      }
+      &.image-align-center {
+        justify-content: center;
+      }
+      &.image-align-right {
+        justify-content: flex-end;
+      }
+
+      // 隐藏表格内的调整手柄
+      .resize-handle {
+        display: none;
+      }
+    }
+  }
 }

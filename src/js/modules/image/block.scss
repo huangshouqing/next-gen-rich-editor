@@ -1,0 +1,85 @@
+/* 新增图片容器样式 */
+.image-container {
+  position: relative;
+  display: inline-block; // 确保行内块级布局
+  transition: all 0.2s;
+  margin: 4px 0;
+  border: none;
+  // 新增不可选中样式
+  user-select: none;
+  -webkit-user-select: none;
+
+  // 限制最大宽度防止溢出
+  max-width: 100%;
+
+  &[class*="image-align-"] {
+    clear: both;
+    margin: 8px 16px;
+    max-width: calc(100% - 32px); // 新增宽度限制
+  }
+
+  &.image-align-left {
+    float: left;
+    margin: 8px 16px 8px 0; // 调整间距
+    max-width: calc(100% - 16px);
+  }
+
+  &.image-align-right {
+    float: right;
+    margin: 8px 0 8px 16px; // 调整间距
+    max-width: calc(100% - 16px);
+  }
+
+  &.image-align-center {
+    float: none;
+    display: block;
+    margin: 8px auto;
+  }
+
+  // 新增不可编辑样式
+  &[contenteditable="false"] {
+    outline: none;
+
+    &::before {
+      content: none !important;
+    }
+  }
+}
+
+// 修改容器选择器为 Blot 专用类名
+.ql-custom-image {
+  @extend .image-container;
+  display: inline-block;
+
+  // 新增容器与图片同步样式
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none; // 防止图片接收事件影响容器操作
+  }
+}
+
+// 新增基础图片样式
+.editor-content img {
+  max-width: 100%;
+  height: auto;
+  vertical-align: bottom; // 消除图片底部间隙
+}
+// 句柄
+.resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #1976d2;
+  z-index: 9999;
+  cursor: nwse-resize !important;
+  pointer-events: auto;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+// 悬停时显示句柄（block 的句柄的语法）
+.image-container:hover .resize-handle {
+  opacity: 1;
+}
