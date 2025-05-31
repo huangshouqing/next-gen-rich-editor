@@ -1,4 +1,4 @@
-import { EditorCore } from "@/js/core/index";
+import { EditorCore } from "../../core/index";
 import "cropperjs/src/css/cropper.css";
 import Cropper from "cropperjs";
 import './base.scss'
@@ -23,7 +23,7 @@ export default class ImageModule {
     dialog.innerHTML = `
       <div class="dialog-header">
         <span>插入图片</span>
-        <button class="close-btn">×</button>
+        <button class="close-btn">&times;</button>
       </div>
       <div class="dialog-body">
         <div class="left-panel">
@@ -36,6 +36,8 @@ export default class ImageModule {
         </div>
         <div class="right-panel">
           <img src="" alt="预览" class="preview" style="display:none;" />
+          <!-- 裁剪按钮移到预览区内部 -->
+          <button class="crop-btn" style="display:none; margin-top:10px; width:100%;">裁剪图片</button>
         </div>
       </div>
       <div class="dialog-footer">
@@ -92,6 +94,14 @@ export default class ImageModule {
     const uploadArea = dialog.querySelector(".upload-area") as HTMLDivElement;
     const fileInput = dialog.querySelector(".file-input") as HTMLInputElement;
     const previewImg = dialog.querySelector(".preview") as HTMLImageElement;
+    const rightPanel = dialog.querySelector(".right-panel") as HTMLImageElement;
+    // 新增裁剪按钮
+    const cropBtn = document.createElement("button");
+    cropBtn.className = "crop-btn";
+    cropBtn.textContent = "裁剪图片";
+    cropBtn.style.display = "none";
+    rightPanel.appendChild(cropBtn);
+
     // 点击触发隐藏的 input
     uploadArea.querySelector(".browse")?.addEventListener("click", (e) => {
       e.preventDefault();
@@ -106,7 +116,7 @@ export default class ImageModule {
           const result = reader.result as string;
           previewImg.src = result;
           previewImg.style.display = "block";
-          this.showCropDialog(result);
+          cropBtn.style.display = "inline-block"; // 显示裁剪按钮
           resolve(); // 读取成功时解析
         };
 
@@ -148,6 +158,14 @@ export default class ImageModule {
         }
       }
     });
+
+    // 新增裁剪按钮点击事件
+    cropBtn.addEventListener("click", () => {
+      const src = previewImg.src;
+      if (!src) return;
+      
+      this.showCropDialog(src);
+    });
   }
   showCropDialog = (src: string) => {
     const cropDialog = document.createElement("div");
@@ -155,7 +173,7 @@ export default class ImageModule {
     cropDialog.innerHTML = `
       <div class="dialog-header">
         <span>裁剪图片</span>
-        <button class="close-btn">×</button>
+        <button class="close-btn">&times;</button>
       </div>
       <div class="dialog-body">
         <img src="${src}" id="crop-image" />
@@ -215,7 +233,7 @@ export default class ImageModule {
    * 插入图片到编辑器内容中
    */
   private insertImage(src: string): void {
-    this.editor.restoreSelection(true);
+    this.editor.restoreSelection();
     const quill = this.editor.quillInstance?.quill;
     if (!quill) return;
 
@@ -240,13 +258,13 @@ export default class ImageModule {
 
     // 新增表格插入兼容逻辑
     const [blot] = quill.getLeaf(quill.getSelection(true).index);
-    if (blot && blot.domNode?.tagName === "TD") {
+    if (blot && blot.domNode?.nodeType === Node.ELEMENT_NODE && (blot.domNode as HTMLElement).tagName === "TD") {
       const cell = blot.domNode as HTMLTableCellElement;
       cell.style.verticalAlign = "top"; // 确保表格单元格对齐方式
     }
 
-    this.editor.restoreSelection(true);
-    quill.setSelection(quill.getSelection(true).index + 1, 0, "silent");
+    this.editor.restoreSelection();
+    // quill.setSelection(quill.getSelection(true).index + 1, 0, "silent");
   }
 
   /**

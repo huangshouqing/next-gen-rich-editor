@@ -4,9 +4,9 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 600px;
-  background: #fff;
+  background: #f9f9f9; /* 浅灰色背景 */
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* 减弱阴影 */
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -14,18 +14,27 @@
 
 .image-editor-dialog .dialog-header {
   padding: 12px 16px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #eee; /* 更浅的边框 */
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 16px;
   font-weight: bold;
+  color: #333; /* 深灰色文字 */
+  background: #fff; /* 纯白背景 */
+  .close-btn {
+    cursor: pointer;
+    outline: none;
+    border: none;
+    background: #fff;
+  }
 }
 
 .image-editor-dialog .dialog-body {
   display: flex;
   padding: 16px;
   gap: 16px;
+  background: #fff; /* 纯白背景 */
 }
 
 .image-editor-dialog .left-panel {
@@ -36,7 +45,6 @@
 }
 
 .image-editor-dialog .url-input {
-  width: 100%;
   padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -69,6 +77,8 @@
   justify-content: center;
   min-height: 120px;
   border-left: 1px solid #eee;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .image-editor-dialog .preview {
@@ -79,62 +89,65 @@
 
 .image-editor-dialog .dialog-footer {
   padding: 12px 16px;
-  border-top: 1px solid #ddd;
-  text-align: right;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  background: #fff;
 }
 
-.image-editor-dialog .insert-btn,
-.image-editor-dialog .close-btn {
-  padding: 6px 12px;
-  border: none;
-  background: #0284cf;
-  color: white;
+.image-editor-dialog input.url-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
   border-radius: 4px;
-  cursor: pointer;
+  margin-bottom: 8px;
   font-size: 14px;
-  margin-left: 8px;
-}
-
-.image-editor-dialog .close-btn {
-  background: transparent;
-  color: #666;
-  font-size: 18px;
 }
 
 .image-editor-dialog .upload-area {
-  padding: 24px;
-  border: 2px dashed #ccc;
-  border-radius: 8px;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  padding: 16px;
   text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background-color: #f9f9f9;
-  font-size: 14px;
   color: #666;
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  input {
+    display: none;
+  }
 }
 
 .image-editor-dialog .upload-area.dragover {
-  border-color: #0284cf;
-  background-color: #e6f0fb;
-  color: #0284cf;
+  background-color: #f0f0f0;
+  border-color: #bbb;
 }
 
-.image-editor-dialog .upload-area .browse {
-  display: inline-block;
-  margin-top: 8px;
-  color: #0284cf;
+.image-editor-dialog .crop-btn,
+.image-editor-dialog .insert-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-weight: normal;
   cursor: pointer;
-  text-decoration: underline;
-  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+  background-color: #e8e8e8;
 }
 
-.image-editor-dialog .file-input {
-  display: none;
+.image-editor-dialog .crop-btn {
+  background-color: #e8e8e8;
+  color: #333;
+}
+
+.image-editor-dialog .insert-btn {
+  // background-color: #007bff;
+  background-color: #e8e8e8;
+  // color: white;
+  color: #333;
+}
+
+.image-editor-dialog .crop-btn:hover,
+.image-editor-dialog .insert-btn:hover {
+  opacity: 0.9;
 }
 
 @media (max-width: 768px) {
@@ -194,34 +207,39 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 800px;
-  max-height: 80vh; /* 控制最大高度 */
-  overflow: hidden; /* 防止内容溢出弹窗 */
-  background: #fff;
+  width: 800px;
+  background: #f9f9f9;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  z-index: 99999;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
   display: flex;
   flex-direction: column;
 }
 
 .image-crop-dialog .dialog-header {
-  padding: 16px;
-  border-bottom: 1px solid #ddd;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  color: #333;
+  background: #fff;
+  .close-btn {
+    cursor: pointer;
+    outline: none;
+    border: none;
+    background: #fff;
+  }
 }
 
 .image-crop-dialog .dialog-body {
-  flex: 1;
   padding: 16px;
-  overflow: auto; /* 内容过高时可滚动 */
+  background: #fff;
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .image-crop-dialog .cropper-container {
@@ -229,34 +247,52 @@
   position: relative;
   overflow: hidden;
   background-color: #f0f0f0;
-  border: 1px solid #ddd;
+  border: 1px solid #eee;
   border-radius: 4px;
 }
 
 .image-crop-dialog .dialog-footer {
   padding: 12px 16px;
-  border-top: 1px solid #ddd;
-  text-align: right;
-  background-color: #f9f9f9;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  background: #fff;
 }
 
 .image-crop-dialog .insert-btn,
 .image-crop-dialog .cancel-btn {
-  padding: 6px 12px;
+  padding: 8px 16px;
   border: none;
-  background: #0284cf;
-  color: white;
   border-radius: 4px;
+  font-weight: normal;
   cursor: pointer;
-  font-size: 14px;
-  margin-left: 8px;
+  transition: all 0.2s ease;
+}
+
+.image-crop-dialog .insert-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-weight: normal;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #e8e8e8;
+  color: #333;
+}
+
+.image-crop-dialog .insert-btn:hover {
+  opacity: 0.9;
 }
 
 .image-crop-dialog .cancel-btn {
   background: transparent;
   color: #666;
+  margin-left: 8px;
+}
+
+.image-crop-dialog .insert-btn:hover,
+.image-crop-dialog .cancel-btn:hover {
+  opacity: 0.9;
 }
 .image-crop-dialog img#crop-image {
   max-width: 100%;
