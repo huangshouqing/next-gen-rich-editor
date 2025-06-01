@@ -137,9 +137,11 @@ export class EditorCore {
             break;
           //  表格
           case "insertTable":
-            this.quillInstance?.quill
-              .getModule("better-table")
-              .insertTable(3, 3);
+            (
+              this.quillInstance?.quill?.getModule("better-table") as {
+                insertTable: (rows: number, cols: number) => void;
+              }
+            )?.insertTable(3, 3);
             break;
           // 插入图片
           case "insertImage":
@@ -211,7 +213,7 @@ export class EditorCore {
     fn: T,
     delay: number
   ): T {
-    let timer: number | null = null;
+    let timer: any = null;
     return ((...args: any[]) => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => fn.apply(this, args), delay);
@@ -278,8 +280,15 @@ export class EditorCore {
    * 保存当前选区
    */
   saveSelection(): void {
-    const selection = this.quillInstance?.quill.getSelection();
-    if (selection) {
+    const selection = this.quillInstance?.quill.getSelection() as {
+      index: number;
+      length: number;
+    } | null;
+    if (
+      selection &&
+      typeof selection.index !== "undefined" &&
+      typeof selection.length !== "undefined"
+    ) {
       // 保存选区信息到实例变量
       this.savedRange = {
         index: selection.index,
@@ -307,9 +316,12 @@ export class EditorCore {
   getSelectContents(): { [key: string]: any } {
     if (!this.container || !this.quillInstance) return {};
     this.restoreSelection();
-    const { index, length } = this.quillInstance.quill.getSelection();
-    const contents = this.quillInstance.quill.getContents(index, length);
-    return contents;
+    const selection = this.quillInstance.quill.getSelection();
+    if (selection && typeof selection.index !== 'undefined' && typeof selection.length !== 'undefined') {
+      const contents = this.quillInstance.quill.getContents(selection.index, selection.length);
+      return contents;
+    }
+    return {};
   }
   // 以下是工具方法，提供给开发者使用
   /**
@@ -336,21 +348,26 @@ export class EditorCore {
     const delta = this.convertHtmlToDelta("224242");
     try {
       console.log("生成的delta:", delta);
-      if (delta.ops.length === 0) {
+      if (delta && Array.isArray(delta.ops) && delta.ops.length === 0) {
         console.error("转换得到空delta，原始HTML:", html);
         return;
       }
       quill.updateContents(
         new Delta()
           .retain(quill.getSelection()?.index || quill.getLength())
-          .concat(delta),
+          .concat(delta as Delta),
         "user"
       );
     } catch (e) {
       console.error("HTML转换delta失败:", e);
     }
-    const newPosition =
-      (quill.getSelection()?.index || quill.getLength()) + delta.length();
+    const currentSelection = quill.getSelection();
+    const currentIndex = currentSelection
+      ? currentSelection.index
+      : quill.getLength();
+    const deltaLength = delta?.length() ?? 0;
+
+    const newPosition = currentIndex + deltaLength;
     quill.setSelection(newPosition, 0);
   }
 
@@ -373,13 +390,13 @@ export class EditorCore {
    * @param html - HTML 字符串
    * @returns Delta 对象
    */
-  public convertHtmlToDelta = (html) => {
+  public convertHtmlToDelta = (html: string) => {
     const quill = this.quillInstance?.quill;
     if (!quill) {
       return console.warn("quill实例不存在");
     }
     debugger;
-    return quill.clipboard.convert(html);
+    return quill.clipboard.convert({ html });
   };
   /**
    * 将纯文本转换为 Delta

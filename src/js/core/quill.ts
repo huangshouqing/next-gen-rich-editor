@@ -139,12 +139,15 @@ export class QuillModuleImpl {
 
     switch (quillCommand) {
       case "insertImg":
-        this.quill.insertEmbed(
-          this.quill.getSelection().index,
-          "image",
-          value,
-          Quill.sources.USER
-        );
+        const selection = this.quill.getSelection();
+        if (selection) {
+          this.quill.insertEmbed(
+            selection.index,
+            "image",
+            value,
+            Quill.sources.USER
+          );
+        }
         break;
       case "insertText":
         this.quill.insertText(

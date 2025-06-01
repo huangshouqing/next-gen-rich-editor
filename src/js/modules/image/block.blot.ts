@@ -11,7 +11,7 @@ export default class CustomImageBlot extends BlockEmbed {
   private isActive = false;
 
   static create(value: { src: string; align: string }) {
-    const node = super.create();
+    const node = super.create() as HTMLDivElement; // 类型断言修复
     node.classList.add("image-container", `image-align-${value.align}`);
     node.contentEditable = 'false';
 

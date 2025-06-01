@@ -58,7 +58,7 @@ export default class HtmlToMarkdown {
               result += `[${this.convertElement(el)}](${href}${title})`;
               break;
             case "ul":
-              result += `\n\n${this.handleList(el, "- ")}`;
+              result += `\n\n${this.handleList(el)}`;
               break;
             case "ol":
               result += `\n\n${this.handleOrderedList(el)}`;
@@ -109,7 +109,7 @@ export default class HtmlToMarkdown {
     /**
      * 处理无序列表
      */
-    private handleList(element: HTMLElement, prefix: string): string {
+    private handleList(element: HTMLElement): string {
       let result = "";
       
       Array.from(element.querySelectorAll("li")).forEach((li) => {
@@ -145,7 +145,7 @@ export default class HtmlToMarkdown {
       
       // 处理表头
       const headerRow = rows[0];
-      const headers = Array.from(headerRow.querySelectorAll("th"));
+      const headers = Array.from(headerRow.querySelectorAll("th")) as HTMLElement[];
       if (headers.length > 0) {
         markdown += "| ";
         markdown += headers.map(h => this.convertElement(h)).join(" | ");
@@ -159,7 +159,7 @@ export default class HtmlToMarkdown {
         // 处理内容行
         for (let i = 1; i < rows.length; i++) {
           const row = rows[i];
-          const cells = Array.from(row.querySelectorAll("td"));
+          const cells = Array.from(row.querySelectorAll("td")) as HTMLElement[];
           
           if (cells.length > 0) {
             markdown += "| ";
@@ -170,7 +170,7 @@ export default class HtmlToMarkdown {
       } else {
         // 如果没有表头，将所有行视为数据行
         Array.from(rows).forEach(row => {
-          const cells = Array.from(row.querySelectorAll("td, th"));
+          const cells = Array.from(row.querySelectorAll("td, th")) as HTMLElement[];
           
           if (cells.length > 0) {
             markdown += "| ";

@@ -35,7 +35,7 @@ export default class FontSizeModule {
       item.textContent = size.replace("px", "");
       item.dataset.value = size;
       item.addEventListener("click", () => {
-        this.editor.restoreSelection({ forceFocus: true });
+        this.editor.restoreSelection();
         this.editor.execCommand("fontSize", size);
         this.removeExistingDropdown();
       });

@@ -5,10 +5,6 @@ export default class CustomImageBlot extends InlineEmbed {
   static tagName = "p";
   static className = "ql-custom-image";
   static imageMenus = new Map<HTMLImageElement, ContextMenu>(); // 新增静态属性存储菜单实例
-
-  private isResizing = false;
-  private isActive = false;
-
   static create(value: { src: string; align: string }) {
     // 创建新节点时确保干净的结构
     const node = super.create();
@@ -338,7 +334,6 @@ export default class CustomImageBlot extends InlineEmbed {
     };
 
     const stopResize = () => {
-      this.isResizing = false;
       container.classList.remove("resizing");
       document.removeEventListener("mousemove", doResize);
       document.removeEventListener("mouseup", stopResize);
@@ -408,7 +403,6 @@ export default class CustomImageBlot extends InlineEmbed {
         this.updateHandlePositions(blotContainer);
       });
 
-      this.prototype.isResizing = true;
       this.prototype.startResize(
         blotContainer,
         (e.currentTarget as HTMLElement).dataset.position!,
