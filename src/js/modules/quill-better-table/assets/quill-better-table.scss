@@ -157,3 +157,64 @@ table.quill-better-table {
     }
   }
 }
+
+.qldb-row-tool {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 99;
+  width: 16px;
+}
+
+.qldb-row-tool-cell {
+  position: relative;
+  background-color: #fff;
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  
+  &:first-child {
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+  }
+  
+  &:not(:first-child) {
+    border-bottom: 1px solid #000;
+    border-top: none;
+  }
+}
+
+.qldb-row-tool-cell-holder {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  right: 0;
+  z-index: 3;
+  height: 1px;
+  background-color: transparent;
+  cursor: ns-resize;
+
+  &:hover {
+    background-color: $primaryColor;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: -6px;
+    display: block;
+    height: 8px;
+    width: 100%;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    display: block;
+    height: 8px;
+    width: 100%;
+  }
+}
