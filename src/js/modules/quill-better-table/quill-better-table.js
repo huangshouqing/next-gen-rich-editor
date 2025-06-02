@@ -1,4 +1,4 @@
-import Quill from "quill";
+import Quill from "quill-next";
 import TableColumnTool from "./modules/table-column-tool";
 import TableSelection from "./modules/table-selection";
 import TableOperationMenu from "./modules/table-operation-menu";
@@ -13,7 +13,7 @@ import {
 import { getEventComposedPath } from "./utils/index";
 
 const Module = Quill.import("core/module");
-const Delta = Quill.import("delta");
+import Delta from "quill-delta-es";
 
 import {
   TableCol,

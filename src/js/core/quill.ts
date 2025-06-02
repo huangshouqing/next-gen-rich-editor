@@ -1,8 +1,8 @@
-import Quill from "quill";
+import Quill from "quill-next";
 // 引入 quill-better-table 模块
 import QuillBetterTable from "../modules/quill-better-table/quill-better-table.js";
 // 使用 Quill 官方 CSS
-import "../../css/quill.snow.css";
+import "quill-next/dist/quill.bubble.css";
 // 引入字体大小 css
 import "../../css/quill-styles.css";
 // quill-better-table  css
@@ -62,9 +62,20 @@ export class QuillModuleImpl {
     Quill.register("formats/size", FontSize, true);
     // 初始化 Quill 编辑器配置
     this.quill = new Quill(editor, {
-      theme: "snow",
+      placeholder: '请输入内容...',
+      theme: "bubble",
       modules: {
-        toolbar: false,
+        toolbar: {
+          container: [
+            ["bold", "italic", "underline", "strikeThrough"],
+            ["blockquote", "code-block"],
+            [{ header: "1" }, { header: "2" }],
+            [{ list: "ordered" }, { list: "bullet" }],
+            [{ script: "sub" }, { script: "super" }],
+            [{ indent: "-1" }, { indent: "+1" }],
+            [{ direction: "rtl" }],
+          ]
+        },
         "better-table": {
           operationMenu: {
             color: {

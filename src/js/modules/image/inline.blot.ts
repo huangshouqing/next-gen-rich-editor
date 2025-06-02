@@ -1,4 +1,4 @@
-import InlineEmbed from "quill/blots/inline";
+import InlineEmbed from "quill-next/dist/blots/inline";
 import ContextMenu from "../../utils/ContextMenu";
 export default class CustomImageBlot extends InlineEmbed {
   static blotName = "custom-inline-image";

@@ -1,7 +1,8 @@
 import { defineConfig } from "vite";
 import path from "path";
 import sass from "sass";
-import requireTransform from 'vite-plugin-require-transform';
+import requireTransform from "vite-plugin-require-transform";
+import commonjs from "vite-plugin-commonjs";
 
 export default defineConfig(({ mode }) => {
   const isProduction = mode === "production";
@@ -39,6 +40,7 @@ export default defineConfig(({ mode }) => {
       extensions: [".js", ".ts", ".vue", ".json"],
     },
     plugins: [
+      commonjs(),
       {
         name: "sass",
         transform: (id) => {
@@ -50,7 +52,7 @@ export default defineConfig(({ mode }) => {
           }
         },
       },
-      requireTransform({ fileRegex: /\.js$|\.vue$|\.ts$/ })
+      requireTransform({ fileRegex: /\.js$|\.vue$|\.ts$/ }),
     ],
   };
 });

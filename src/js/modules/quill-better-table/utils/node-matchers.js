@@ -1,7 +1,7 @@
-import Quill from 'quill'
+import Quill from 'quill-next'
 import { _omit, convertToHex } from './index'
 
-const Delta = Quill.import('delta')
+import Delta from "quill-delta-es";
 
 // rebuild delta
 export function matchTableCell (node, delta, scroll) {

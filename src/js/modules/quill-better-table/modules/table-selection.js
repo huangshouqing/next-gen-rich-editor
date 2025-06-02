@@ -1,4 +1,4 @@
-import Quill from 'quill'
+import Quill from 'quill-next'
 import { css, getRelativeRect } from '../utils'
 import { TableCell } from '../formats/table'
 

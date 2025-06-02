@@ -1,5 +1,5 @@
 // 添加行高调整工具类
-import Quill from "quill";
+import Quill from "quill-next";
 import { css } from '../utils'
 const ROW_TOOL_WIDTH = 12
 const ROW_TOOL_HEIGHT = 12

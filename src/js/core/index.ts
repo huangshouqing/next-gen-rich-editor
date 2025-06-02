@@ -8,7 +8,7 @@ import {
 } from "../types/types";
 import { QuillModuleImpl } from "./quill";
 import "../../css/base.scss";
-import { Delta } from "quill";
+import Delta from "quill-delta-es";
 import str from "../examples/sample-content.js";
 
 export class EditorCore {
@@ -317,8 +317,15 @@ export class EditorCore {
     if (!this.container || !this.quillInstance) return {};
     this.restoreSelection();
     const selection = this.quillInstance.quill.getSelection();
-    if (selection && typeof selection.index !== 'undefined' && typeof selection.length !== 'undefined') {
-      const contents = this.quillInstance.quill.getContents(selection.index, selection.length);
+    if (
+      selection &&
+      typeof selection.index !== "undefined" &&
+      typeof selection.length !== "undefined"
+    ) {
+      const contents = this.quillInstance.quill.getContents(
+        selection.index,
+        selection.length
+      );
       return contents;
     }
     return {};

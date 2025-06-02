@@ -1,4 +1,4 @@
-import { BlockEmbed } from "quill/blots/block";
+import { BlockEmbed } from "quill-next/dist/blots/block";
 import ContextMenu from "../../utils/ContextMenu";
 
 export default class CustomImageBlot extends BlockEmbed {
