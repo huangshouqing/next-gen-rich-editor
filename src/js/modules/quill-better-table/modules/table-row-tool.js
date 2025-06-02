@@ -130,15 +130,17 @@ export default class TableRowTool {
     
     // 在mousedown时获取最新的行索引
     const handleMousedown = e => {
-      // 每次点击时重新获取最新的行索引
-      const existCells = Array.from(this.domNode.querySelectorAll('.qldb-row-tool-cell'));
-      const rowIndex = existCells.indexOf(cell);
-      
       document.addEventListener('mousemove', handleDrag, false);
       document.addEventListener('mouseup', handleMouseup, false);
 
       tableRect = this.table.getBoundingClientRect();
       cellRect = cell.getBoundingClientRect();
+      
+      // 获取行元素的实际高度
+      const existCells = Array.from(this.domNode.querySelectorAll('.qldb-row-tool-cell'));
+      const rowIndex = existCells.indexOf(cell);
+      const rowElement = tableContainer.rows()[rowIndex]?.domNode;
+      height0 = rowElement?.offsetHeight || CELL_MIN_WIDTH;
       
       $helpLine = document.createElement('div');
       css($helpLine, {
@@ -155,7 +157,6 @@ export default class TableRowTool {
       
       dragging = true;
       y0 = e.clientY;
-      height0 = cellRect.height;
       $holder.classList.add('dragging');
     };
     
@@ -165,29 +166,34 @@ export default class TableRowTool {
       if (dragging) {
         y = e.clientY;
         
-        if (height0 + y - y0 >= CELL_MIN_WIDTH) {
-          delta = y - y0;
+        // 计算delta为相对于初始位置的垂直差值
+        delta = y - y0;
+        
+        // 确保行高不小于最小值
+        if (height0 + delta >= CELL_MIN_WIDTH) {
+          css($helpLine, {
+            'top': `${cellRect.top + cellRect.height - 1 + delta}px`
+          });
         } else {
           delta = CELL_MIN_WIDTH - height0;
+          css($helpLine, {
+            'top': `${cellRect.top + cellRect.height - 1 + delta}px`
+          });
         }
-
-        css($helpLine, {
-          'top': `${cellRect.top + cellRect.height - 1 + delta}px`
-        });
       }
     };
 
     const handleMouseup = e => {
       e.preventDefault();
       
-      // 在mouseup时再次获取最新的行索引
       const existCells = Array.from(this.domNode.querySelectorAll('.qldb-row-tool-cell'));
       const rowIndex = existCells.indexOf(cell);
       const rowsInTable = tableContainer.rows();
       const rowBlot = rowsInTable[rowIndex];
 
       if (dragging && rowBlot && rowIndex >= 0) {
-        const newHeight = height0 + delta;
+        // 确保行高不小于最小值
+        const newHeight = Math.max(height0 + delta, CELL_MIN_WIDTH);
         const rowElement = rowBlot.domNode;
         if (rowElement) {
           // 同步更新行和工具单元格的高度
