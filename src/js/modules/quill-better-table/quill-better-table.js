@@ -47,6 +47,25 @@ class BetterTable extends Module {
   constructor(quill, options) {
     super(quill, options);
 
+    // 添加文本变化监听器
+    this.textChangeHandler = (delta, oldDelta, source) => {
+      if (source === Quill.sources.USER) {
+        const range = this.quill.getSelection();
+        const [table] = this.getTable(range);
+        
+        // 如果变化发生在表格内
+        if (table && this.rowTool) {
+          // 延迟执行高度同步以确保DOM更新
+          setTimeout(() => {
+            this.rowTool.syncRowHeightsWithContent();
+          }, 0);
+        }
+      }
+    };
+    
+    // 监听文本变化
+    this.quill.on('text-change', this.textChangeHandler);
+    
     // handle click on quill-better-table
     this.quill.root.addEventListener(
       "click",
@@ -186,6 +205,25 @@ class BetterTable extends Module {
     quill.clipboard.matchers = quill.clipboard.matchers.filter((matcher) => {
       return matcher[0] !== "tr";
     });
+  }
+
+  destroy() {
+    this.columnTool && this.columnTool.destroy();
+    this.rowTool && this.rowTool.destroy();
+    this.tableSelection && this.tableSelection.destroy();
+    this.tableOperationMenu && this.tableOperationMenu.destroy();
+    
+    // 移除文本变化监听器
+    if (this.textChangeHandler) {
+      this.quill.off('text-change', this.textChangeHandler);
+      this.textChangeHandler = null;
+    }
+    
+    this.columnTool = null;
+    this.rowTool = null;
+    this.tableSelection = null;
+    this.tableOperationMenu = null;
+    this.table = null;
   }
 
   getTable(range = this.quill.getSelection()) {
