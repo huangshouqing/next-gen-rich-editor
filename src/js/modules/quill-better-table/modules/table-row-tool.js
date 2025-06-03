@@ -29,15 +29,16 @@ export default class TableRowTool {
     this.updateRowTools();
 
     // 计算表格总高度
-    const tableHeight = Array.from(this.table.querySelectorAll("tr")).reduce(
-      (sum, row) => sum + row.offsetHeight,
-      0
-    );
+    const tableHeight =
+      Array.from(this.table.querySelectorAll("tr")).reduce(
+        (sum, row) => sum + row.offsetHeight,
+        0
+      ) + 1;
 
     // 使用表格实际高度作为工具栏高度
     const toolStyle = {
       width: `${ROW_TOOL_WIDTH}px`,
-      height: `${tableHeight}px`, // 明确设置高度
+      // height: `${tableHeight}px`, // 明确设置高度
       left: `${
         tableViewRect.left -
         containerRect.left +
@@ -54,7 +55,7 @@ export default class TableRowTool {
     // 添加调试信息
     console.log("初始化工具栏高度:", tableHeight);
   }
-  // 用来表格内输入内容同步高度的
+  // 更新表格行工具列和内容区同步
   syncRowHeightsWithContent() {
     this.updateRowToolContainerHeight();
     this.updateRowTools();
@@ -221,6 +222,15 @@ export default class TableRowTool {
         if (rowElement) {
           if (height0 + delta <= this.getRowContentMinHeight(rowElement)) {
             // 这边还需要添加一段逻辑，即行高不能小于内部元素加在一起的 offsetheight
+            css(rowElement, {
+              "min-height": `${this.getRowContentMinHeight(rowElement)}px`,
+              height: `${this.getRowContentMinHeight(rowElement)}px`,
+            });
+
+            css(cell, {
+              "min-height": `${this.getRowContentMinHeight(rowElement)}px`,
+              height: `${this.getRowContentMinHeight(rowElement)}px`,
+            });
           } else {
             // 同步更新行和工具单元格的高度
             css(rowElement, {
@@ -276,14 +286,14 @@ export default class TableRowTool {
     const tableHeight = this.table.offsetHeight;
 
     // 更新工具栏容器高度
-    if (this.domNode) {
-      css(this.domNode, {
-        height: `${tableHeight}px`,
-      });
+    // if (this.domNode) {
+    //   css(this.domNode, {
+    //     height: `${tableHeight}px`,
+    //   });
 
-      // 添加调试信息
-      console.log("更新工具栏高度:", tableHeight);
-    }
+    //   // 添加调试信息
+    //   console.log("更新工具栏高度:", tableHeight);
+    // }
   }
 
   // 新增方法：获取单元格最小宽度（考虑内部元素）
@@ -327,42 +337,43 @@ export default class TableRowTool {
   // 修改方法：获取行内容最小高度（基于子元素高度总和）
   getRowContentMinHeight(rowElement) {
     if (!rowElement) return CELL_MIN_WIDTH;
-    
+
     // 获取行内所有单元格
-    const cells = Array.from(rowElement.querySelectorAll('td, th'));
+    const cells = Array.from(rowElement.querySelectorAll("td, th"));
     let maxContentHeight = 0;
-    
+
     // 计算每个单元格内子元素的高度总和
-    cells.forEach(cell => {
+    cells.forEach((cell) => {
       let cellTotalHeight = 0;
-      
+
       // 获取所有可见子元素
-      const visibleChildren = Array.from(cell.children).filter(child => {
+      const visibleChildren = Array.from(cell.children).filter((child) => {
         const style = window.getComputedStyle(child);
-        return style.display !== 'none' && style.visibility !== 'hidden';
+        return style.display !== "none" && style.visibility !== "hidden";
       });
-      
+
       // 累加子元素高度
-      visibleChildren.forEach(child => {
+      visibleChildren.forEach((child) => {
         cellTotalHeight += child.offsetHeight;
       });
-      
+
       // 考虑子元素之间的间隙
       if (visibleChildren.length > 1) {
         const margins = visibleChildren.slice(0, -1).reduce((sum, child) => {
-          const marginBottom = parseInt(window.getComputedStyle(child).marginBottom) || 0;
+          const marginBottom =
+            parseInt(window.getComputedStyle(child).marginBottom) || 0;
           return sum + marginBottom;
         }, 0);
-        
+
         cellTotalHeight += margins;
       }
-      
+
       // 更新最大高度
       if (cellTotalHeight > maxContentHeight) {
         maxContentHeight = cellTotalHeight;
       }
     });
-    
+
     // 添加额外的安全边距
     return maxContentHeight + 8; // 增加安全间距
   }

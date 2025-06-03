@@ -52,7 +52,7 @@ class BetterTable extends Module {
       if (source === Quill.sources.USER) {
         const range = this.quill.getSelection();
         const [table] = this.getTable(range);
-        
+
         // 如果变化发生在表格内
         if (table && this.rowTool) {
           // 延迟执行高度同步以确保DOM更新
@@ -62,10 +62,10 @@ class BetterTable extends Module {
         }
       }
     };
-    
+
     // 监听文本变化
-    this.quill.on('text-change', this.textChangeHandler);
-    
+    this.quill.on("text-change", this.textChangeHandler);
+
     // handle click on quill-better-table
     this.quill.root.addEventListener(
       "click",
@@ -166,6 +166,14 @@ class BetterTable extends Module {
       false
     );
 
+    // 添加失焦事件监听
+    // this.quill.root.addEventListener("blur", (evt) => {
+    //   // 仅在非右键操作时隐藏工具
+    //   if (!this.tableOperationMenu || !this.tableOperationMenu.isContextMenuActive()) {
+    //     this.hideTableTools();
+    //   }
+    // });
+
     // add keyboard binding：Backspace
     // prevent user hits backspace to delete table cell
     const KeyBoard = quill.getModule("keyboard");
@@ -212,13 +220,13 @@ class BetterTable extends Module {
     this.rowTool && this.rowTool.destroy();
     this.tableSelection && this.tableSelection.destroy();
     this.tableOperationMenu && this.tableOperationMenu.destroy();
-    
+
     // 移除文本变化监听器
     if (this.textChangeHandler) {
-      this.quill.off('text-change', this.textChangeHandler);
+      this.quill.off("text-change", this.textChangeHandler);
       this.textChangeHandler = null;
     }
-    
+
     this.columnTool = null;
     this.rowTool = null;
     this.tableSelection = null;

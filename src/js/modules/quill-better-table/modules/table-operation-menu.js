@@ -97,6 +97,7 @@ const MENU_ITEMS_DEFAULT = {
         false,
         this.quill.root.parentNode
       )
+      this.tableRowTool.syncRowHeightsWithContent()
       this.quill.update(Quill.sources.USER)
       this.quill.setSelection(
         this.quill.getIndex(affectedCells[0]),
@@ -120,6 +121,7 @@ const MENU_ITEMS_DEFAULT = {
         true,
         this.quill.root.parentNode
       )
+      this.tableRowTool.syncRowHeightsWithContent()
       this.quill.update(Quill.sources.USER)
       this.quill.setSelection(
         this.quill.getIndex(affectedCells[0]),
@@ -234,6 +236,7 @@ const MENU_ITEMS_DEFAULT = {
         this.boundary,
         this.quill.root.parentNode
       )
+      this.tableRowTool.syncRowHeightsWithContent()
       this.quill.update(Quill.sources.USER)
       this.tableSelection.clearSelection()
     }
@@ -261,6 +264,7 @@ export default class TableOperationMenu {
     this.options = options
     this.menuItems = Object.assign({}, MENU_ITEMS_DEFAULT, options.items)
     this.tableColumnTool = betterTableModule.columnTool
+    this.tableRowTool = betterTableModule.rowTool
     this.boundary = this.tableSelection.boundary
     this.selectedTds = this.tableSelection.selectedTds
     this.destroyHandler = this.destroy.bind(this)
