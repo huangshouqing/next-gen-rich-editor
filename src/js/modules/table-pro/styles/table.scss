@@ -1,0 +1,295 @@
+.ql-table-container {
+  position: relative;
+  margin: 1em 0;
+  user-select: none;
+}
+
+.ql-table-pro {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    min-width: 20px;
+    min-height: 20px;
+    position: relative;
+    vertical-align: top;
+    cursor: default;
+    transition: background-color 0.2s;
+
+    &[contenteditable="true"] {
+      cursor: text;
+      user-select: text;
+    }
+
+    &.selected {
+      background-color: rgba(180, 215, 255, 0.5);
+    }
+
+    &[colspan], &[rowspan] {
+      background-color: rgba(180, 215, 255, 0.1);
+    }
+  }
+
+  tr {
+    position: relative;
+  }
+}
+
+// 表格工具栏
+.ql-table-toolbar {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  right: 0;
+  height: 34px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  gap: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+
+  .toolbar-group {
+    display: flex;
+    gap: 2px;
+    padding: 0 5px;
+    border-right: 1px solid #ccc;
+
+    &:last-child {
+      border-right: none;
+    }
+
+    button {
+      padding: 4px;
+      border: 1px solid transparent;
+      background: none;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #222f3e;
+
+      &:hover {
+        background-color: #f1f1f1;
+        border-color: #ccc;
+      }
+
+      &:active {
+        background-color: #e4e6e9;
+      }
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+}
+
+// 调整大小的手柄
+.resize-handle {
+  position: absolute;
+  z-index: 2;
+  background-color: transparent;
+
+  &.col-resize {
+    top: -1px;
+    right: -3px;
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+
+    &:hover, &.dragging {
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 2px;
+        width: 2px;
+        height: 100%;
+        background-color: #1a73e8;
+      }
+    }
+  }
+
+  &.row-resize {
+    bottom: -3px;
+    left: -1px;
+    height: 6px;
+    width: 100%;
+    cursor: row-resize;
+
+    &:hover, &.dragging {
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 0;
+        height: 2px;
+        width: 100%;
+        background-color: #1a73e8;
+      }
+    }
+  }
+}
+
+// 选择指示器
+.selection-indicator {
+  position: absolute;
+  border: 2px solid #1a73e8;
+  pointer-events: none;
+  z-index: 1;
+}
+
+// 右键菜单
+.table-context-menu {
+  position: fixed;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 4px 0;
+  z-index: 1000;
+
+  .menu-item {
+    padding: 6px 20px 6px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #222f3e;
+    font-size: 13px;
+
+    &:hover {
+      background-color: #f1f1f1;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+    }
+
+    &.has-submenu {
+      position: relative;
+      padding-right: 24px;
+
+      &::after {
+        content: '›';
+        position: absolute;
+        right: 8px;
+        font-size: 16px;
+      }
+    }
+  }
+
+  .menu-separator {
+    height: 1px;
+    background-color: #ccc;
+    margin: 4px 0;
+  }
+}
+
+// 表格属性对话框
+.table-properties-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  min-width: 300px;
+  z-index: 1001;
+
+  .dialog-header {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .dialog-body {
+    display: grid;
+    gap: 12px;
+
+    .form-group {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      align-items: center;
+      gap: 8px;
+
+      label {
+        color: #222f3e;
+      }
+
+      input, select {
+        padding: 4px 8px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        
+        &:focus {
+          border-color: #1a73e8;
+          outline: none;
+        }
+      }
+    }
+  }
+
+  .dialog-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #ccc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+
+    button {
+      padding: 6px 16px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 13px;
+
+      &.primary {
+        background-color: #1a73e8;
+        color: white;
+        border: none;
+
+        &:hover {
+          background-color: #1557b0;
+        }
+      }
+
+      &.secondary {
+        background-color: white;
+        color: #222f3e;
+        border: 1px solid #ccc;
+
+        &:hover {
+          background-color: #f1f1f1;
+        }
+      }
+    }
+  }
+}
+
+// 遮罩层
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+} 

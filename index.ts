@@ -16,7 +16,7 @@ new EditorCore("#editor", {
     ["justifyLeft", "justifyCenter", "justifyRight", "justifyFull"],
     ["insertUnorderedList", "insertOrderedList"],
     ["indent", "outdent"],
-    ["insertTable", "createLink", "insertImage"],
+    ["table-pro", "createLink", "insertImage"],
     ["foreColor", "hiliteColor"],
     ["undo", "redo"],
     ["clear", "insertSample", "toMarkdown", "clearFormat"],

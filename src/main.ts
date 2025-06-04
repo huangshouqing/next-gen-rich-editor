@@ -17,5 +17,5 @@ export {
   FontColorModule,
   BackgroundColorModule,
   HtmlToMarkdown,
-  FormulaModule
+  FormulaModule,
 };

@@ -392,6 +392,13 @@ export default class CustomImageBlot extends BlockEmbed {
         },
       },
       {
+        label: "独占一行",
+        handler: () => {
+          container.classList.remove("image-align-left", "image-align-right", "image-align-center");
+          container.classList.add("image-align-inline");
+        },
+      },
+      {
         label: "重置旋转和翻转",
         handler: () => {
           container.dataset.rotation = "0";

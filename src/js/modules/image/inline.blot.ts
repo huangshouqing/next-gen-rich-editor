@@ -5,7 +5,12 @@ export default class CustomImageBlot extends InlineEmbed {
   static tagName = "p";
   static className = "ql-custom-image";
   static imageMenus = new Map<HTMLImageElement, ContextMenu>(); // 新增静态属性存储菜单实例
-  static create(value: { src: string; align: string }) {
+  
+  private static currentRotation = 0;
+  private static isFlippedHorizontal = false;
+  private static isFlippedVertical = false;
+
+  static create(value: { src: string; align: string; rotation?: number; flipH?: boolean; flipV?: boolean }) {
     // 创建新节点时确保干净的结构
     const node = super.create();
     node.classList.add(
@@ -17,6 +22,28 @@ export default class CustomImageBlot extends InlineEmbed {
     node.style.position = "relative";
     node.style.display = "inline-block";
     node.style.verticalAlign = "middle";
+    node.style.transformOrigin = "center center";
+
+    // 设置初始旋转和翻转状态
+    if (typeof value.rotation === 'number') {
+      this.currentRotation = value.rotation;
+      node.dataset.rotation = value.rotation.toString();
+    } else {
+      this.currentRotation = 0;
+      node.dataset.rotation = "0";
+    }
+
+    if (value.flipH) {
+      this.isFlippedHorizontal = true;
+      node.classList.add("flip-horizontal");
+    }
+    if (value.flipV) {
+      this.isFlippedVertical = true;
+      node.classList.add("flip-vertical");
+    }
+    if (value.flipH && value.flipV) {
+      node.classList.add("flip-both");
+    }
 
     // 强制清空现有内容（防止复用旧节点时残留内容）
     while (node.firstChild) {
@@ -28,6 +55,29 @@ export default class CustomImageBlot extends InlineEmbed {
       .toString(36)
       .substr(2, 9)}`;
     node.id = containerId;
+
+    // 创建工具栏
+    const toolbar = document.createElement("div");
+    toolbar.className = "image-toolbar";
+    toolbar.innerHTML = `
+      <button class="rotate-left" title="向左旋转90°">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12,4V1L8,5L12,9V6C15.31,6 18,8.69 18,12C18,13.01 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12C20,7.58 16.42,4 12,4M12,18C8.69,18 6,15.31 6,12C6,10.99 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12C4,16.42 7.58,20 12,20V23L16,19L12,15V18Z"/></svg>
+      </button>
+      <button class="rotate-right" title="向右旋转90°">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12,4V1L8,5L12,9V6C15.31,6 18,8.69 18,12C18,13.01 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12C20,7.58 16.42,4 12,4M12,18C8.69,18 6,15.31 6,12C6,10.99 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12C4,16.42 7.58,20 12,20V23L16,19L12,15V18Z" transform="scale(-1, 1) translate(-24, 0)"/></svg>
+      </button>
+      <button class="flip-h" title="水平翻转">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15,21H17V19H15M19,9H21V7H19M3,5H21V3H3M19,13H21V11H19M19,21H21V19H19M19,17H21V15H19M15,13H17V11H15M15,5H17V3H15M15,17H17V15H15M3,21H13V19H3M3,13H13V11H3M3,17H13V15H3M3,9H13V7H3Z"/></svg>
+      </button>
+      <button class="flip-v" title="垂直翻转">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15,21H17V19H15M19,9H21V7H19M3,5H21V3H3M19,13H21V11H19M19,21H21V19H19M19,17H21V15H19M15,13H17V11H15M15,5H17V3H15M15,17H17V15H15M3,21H13V19H3M3,13H13V11H3M3,17H13V15H3M3,9H13V7H3Z" transform="rotate(90) translate(0, -24)"/></svg>
+      </button>
+    `;
+
+    // 创建旋转指示器
+    const rotationIndicator = document.createElement("div");
+    rotationIndicator.className = "rotation-indicator";
+    rotationIndicator.style.display = "none";
 
     // 创建新的图片元素
     const img = document.createElement("img");
@@ -42,8 +92,12 @@ export default class CustomImageBlot extends InlineEmbed {
     wrapper.style.display = "inline-block";
     wrapper.style.maxWidth = "100%";
 
-    // 严格保证独立结构
-    wrapper.appendChild(img.cloneNode(true)); // 克隆确保独立
+    // 添加工具栏和旋转指示器到容器
+    node.appendChild(toolbar);
+    node.appendChild(rotationIndicator);
+
+    // 添加图片到包裹容器
+    wrapper.appendChild(img.cloneNode(true));
     node.appendChild(wrapper);
 
     // 抽离创建句柄逻辑
@@ -185,11 +239,11 @@ export default class CustomImageBlot extends InlineEmbed {
       {
         label: "左对齐",
         handler: () => {
-          // 修改：操作容器类名
           container.classList.remove(
             "image-align-center",
             "image-align-right",
-            "image-align-inline"
+            "image-align-inline",
+            "image-align-fill"
           );
           container.classList.add("image-align-left");
         },
@@ -200,7 +254,8 @@ export default class CustomImageBlot extends InlineEmbed {
           container.classList.remove(
             "image-align-left",
             "image-align-right",
-            "image-align-inline"
+            "image-align-inline",
+            "image-align-fill"
           );
           container.classList.add("image-align-center");
         },
@@ -211,7 +266,8 @@ export default class CustomImageBlot extends InlineEmbed {
           container.classList.remove(
             "image-align-left",
             "image-align-center",
-            "image-align-inline"
+            "image-align-inline",
+            "image-align-fill"
           );
           container.classList.add("image-align-right");
         },
@@ -222,7 +278,8 @@ export default class CustomImageBlot extends InlineEmbed {
           container.classList.remove(
             "image-align-left",
             "image-align-center",
-            "image-align-right"
+            "image-align-right",
+            "image-align-fill"
           );
           container.classList.add("image-align-inline");
         },
@@ -230,7 +287,6 @@ export default class CustomImageBlot extends InlineEmbed {
       {
         label: "铺满宽度",
         handler: () => {
-          // 移除其他对齐方式并应用铺满样式
           container.classList.remove(
             "image-align-left",
             "image-align-center",
@@ -238,20 +294,28 @@ export default class CustomImageBlot extends InlineEmbed {
             "image-align-inline"
           );
           
-          // 添加铺满类名
           container.classList.add("image-align-fill");
           
-          // 应用样式
           container.style.width = "100%";
           const currentImg = container.querySelector("img")!;
           currentImg.style.width = "100%";
           currentImg.style.height = "auto";
           
-          // 强制更新句柄位置
           requestAnimationFrame(() => {
             this.syncHandlesPosition(container);
             this.updateHandlePositions(container);
           });
+        },
+      },
+      {
+        label: "重置旋转和翻转",
+        handler: () => {
+          container.dataset.rotation = "0";
+          container.classList.remove("flip-horizontal", "flip-vertical", "flip-both");
+          this.currentRotation = 0;
+          this.isFlippedHorizontal = false;
+          this.isFlippedVertical = false;
+          this.updateHandlePositions(container);
         },
       },
       {
@@ -504,6 +568,71 @@ export default class CustomImageBlot extends InlineEmbed {
       CustomImageBlot.showImageContextMenu(img, e);
     };
     blotContainer.addEventListener("contextmenu", contextMenuHandler);
+
+    // 工具栏按钮事件
+    const toolbar = blotContainer.querySelector(".image-toolbar");
+    if (toolbar) {
+      const rotationIndicator = blotContainer.querySelector(".rotation-indicator") as HTMLElement;
+      
+      // 左旋转
+      toolbar.querySelector(".rotate-left")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.currentRotation = ((this.currentRotation - 90) % 360 + 360) % 360;
+        blotContainer.dataset.rotation = this.currentRotation.toString();
+        this.showRotationFeedback(rotationIndicator, this.currentRotation);
+        this.updateHandlePositions(blotContainer);
+      });
+
+      // 右旋转
+      toolbar.querySelector(".rotate-right")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.currentRotation = (this.currentRotation + 90) % 360;
+        blotContainer.dataset.rotation = this.currentRotation.toString();
+        this.showRotationFeedback(rotationIndicator, this.currentRotation);
+        this.updateHandlePositions(blotContainer);
+      });
+
+      // 水平翻转
+      toolbar.querySelector(".flip-h")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.isFlippedHorizontal = !this.isFlippedHorizontal;
+        blotContainer.classList.toggle("flip-horizontal");
+        if (this.isFlippedHorizontal && this.isFlippedVertical) {
+          blotContainer.classList.add("flip-both");
+        } else {
+          blotContainer.classList.remove("flip-both");
+        }
+        this.updateHandlePositions(blotContainer);
+      });
+
+      // 垂直翻转
+      toolbar.querySelector(".flip-v")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.isFlippedVertical = !this.isFlippedVertical;
+        blotContainer.classList.toggle("flip-vertical");
+        if (this.isFlippedHorizontal && this.isFlippedVertical) {
+          blotContainer.classList.add("flip-both");
+        } else {
+          blotContainer.classList.remove("flip-both");
+        }
+        this.updateHandlePositions(blotContainer);
+      });
+    }
+  }
+
+  private static showRotationFeedback(indicator: HTMLElement, rotation: number) {
+    if (!indicator) return;
+    
+    indicator.textContent = `${rotation}°`;
+    indicator.style.display = "block";
+    indicator.style.opacity = "1";
+    
+    setTimeout(() => {
+      indicator.style.opacity = "0";
+      setTimeout(() => {
+        indicator.style.display = "none";
+      }, 200);
+    }, 1000);
   }
 
   static value(node: HTMLElement) {
@@ -513,6 +642,9 @@ export default class CustomImageBlot extends InlineEmbed {
         Array.from(node.classList)
           .find((c) => c.startsWith("image-align-"))
           ?.split("-")[2] || "inline",
+      rotation: parseInt(node.dataset.rotation || "0"),
+      flipH: node.classList.contains("flip-horizontal"),
+      flipV: node.classList.contains("flip-vertical")
     };
   }
 }

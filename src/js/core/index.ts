@@ -39,7 +39,7 @@ export class EditorCore {
     ["justifyLeft", "justifyCenter", "justifyRight", "justifyFull"],
     ["insertUnorderedList", "insertOrderedList"],
     ["indent", "outdent"],
-    ["insertTable", "createLink", "insertImage"],
+    ["table-pro", "insertTable", "createLink", "insertImage"],
     ["foreColor", "hiliteColor"],
     ["undo", "redo"],
     ["clear", "insertSample", "toMarkdown", "clearFormat"],
@@ -99,6 +99,15 @@ export class EditorCore {
         switch (cmd) {
           case "formula":
             this.moduleInstances["FormulaModule"]?.showDialog?.();
+            break;
+          // 表格增强
+          case "table-pro":
+            if (this.quillInstance?.quill?.getModule("table-pro")) {
+              // The module will handle the table insertion UI
+              break;
+            } else {
+              console.warn("TablePro module not found. Please check the configuration.");
+            }
             break;
           // 字体颜色
           case "foreColor":
@@ -266,6 +275,8 @@ export class EditorCore {
           button.id = "font-size-btn";
         } else if (cmd === "formula") {
           button.id = "formula-btn";
+        } else if(cmd ==='table-pro'){
+          button.id = 'ql-table-pro'
         }
         button.dataset.cmd = cmd;
         // 直接插入 SVG 字符串
@@ -274,6 +285,7 @@ export class EditorCore {
       });
       toolbar.appendChild(groupDiv);
     });
+    debugger
     return toolbar;
   }
   /**

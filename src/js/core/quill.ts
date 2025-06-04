@@ -1,12 +1,17 @@
 import Quill from "quill-next";
 // 引入 quill-better-table 模块
 import QuillBetterTable from "../modules/quill-better-table/quill-better-table.js";
+// 引入 table-pro 模块
+import { TableProTool, TableProBlot, TableRowBlot, TableCellBlot } from "../modules/table-pro/main";
 // 使用 Quill 官方 CSS
 import "quill-next/dist/quill.bubble.css";
 // 引入字体大小 css
 import "../../css/quill-styles.css";
 // quill-better-table  css
 import "../modules/quill-better-table/assets/quill-better-table.scss";
+// table-pro css
+import "../modules/table-pro/styles/table-picker.scss";
+import "../modules/table-pro/styles/table.scss";
 import CustomImageBlot from "../modules/image/block.blot.js";
 import CustomInlineImageBlot from "../modules/image/inline.blot.js";
 
@@ -17,6 +22,18 @@ Quill.register(
   },
   true
 );
+
+// 注册 table-pro 模块
+Quill.register({
+  "formats/table-pro": TableProBlot,
+  "formats/table-row": TableRowBlot,
+  "formats/table-cell": TableCellBlot,
+}, true);
+
+Quill.register({
+  "modules/table-pro": TableProTool,
+}, true);
+
 Quill.register("formats/custom-image", CustomImageBlot);
 Quill.register("formats/custom-inline-image", CustomInlineImageBlot);
 // 定义Quill模块接口
@@ -74,6 +91,7 @@ export class QuillModuleImpl {
             [{ script: "sub" }, { script: "super" }],
             [{ indent: "-1" }, { indent: "+1" }],
             [{ direction: "rtl" }],
+            [{ "table-pro": true }]
           ]
         },
         "better-table": {
@@ -82,6 +100,14 @@ export class QuillModuleImpl {
               colors: ["red", "green", "yellow", "white"],
             },
           },
+        },
+        "table-pro": {
+          rows: 3,
+          cols: 3,
+          minRows: 2,
+          minCols: 2,
+          maxRows: 10,
+          maxCols: 10,
         },
         keyboard: {
           bindings: QuillBetterTable.keyboardBindings,

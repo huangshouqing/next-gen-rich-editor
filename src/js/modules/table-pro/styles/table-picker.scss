@@ -1,0 +1,43 @@
+.ql-table-picker {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 8px;
+  z-index: 9999;
+
+  .ql-table-picker-size {
+    text-align: center;
+    padding: 4px;
+    color: #666;
+    font-size: 12px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 8px;
+  }
+
+  .ql-table-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 20px);
+    grid-template-rows: repeat(10, 20px);
+    gap: 2px;
+  }
+
+  .ql-table-picker-cell {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: #1976d2;
+    }
+
+    &.active {
+      background: #e3f2fd;
+      border-color: #1976d2;
+    }
+  }
+} 
