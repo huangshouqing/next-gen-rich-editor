@@ -11,6 +11,7 @@
 
   // 限制最大宽度防止溢出
   max-width: 100%;
+  transform-origin: center center;
 
   &[class*="image-align-"] {
     clear: both;
@@ -44,6 +45,111 @@
       content: none !important;
     }
   }
+
+  &.is-rotating .rotation-indicator {
+    opacity: 1;
+  }
+
+  &:hover {
+    .image-toolbar {
+      opacity: 1;
+    }
+    .resize-handle {
+      opacity: 1;
+    }
+  }
+
+  // 修改镜像和旋转效果 - 移到容器上
+  &.flip-horizontal {
+    transform: scaleX(-1);
+  }
+  
+  &.flip-vertical {
+    transform: scaleY(-1);
+  }
+
+  &.flip-both {
+    transform: scale(-1, -1);
+  }
+
+  // 旋转状态 - 应用到容器
+  &[data-rotation="90"] {
+    transform: rotate(90deg);
+  }
+  &[data-rotation="180"] {
+    transform: rotate(180deg);
+  }
+  &[data-rotation="270"] {
+    transform: rotate(270deg);
+  }
+
+  // 组合变换 - 应用到容器
+  &.flip-horizontal[data-rotation="90"] {
+    transform: rotate(90deg) scaleX(-1);
+  }
+  &.flip-horizontal[data-rotation="180"] {
+    transform: rotate(180deg) scaleX(-1);
+  }
+  &.flip-horizontal[data-rotation="270"] {
+    transform: rotate(270deg) scaleX(-1);
+  }
+
+  &.flip-vertical[data-rotation="90"] {
+    transform: rotate(90deg) scaleY(-1);
+  }
+  &.flip-vertical[data-rotation="180"] {
+    transform: rotate(180deg) scaleY(-1);
+  }
+  &.flip-vertical[data-rotation="270"] {
+    transform: rotate(270deg) scaleY(-1);
+  }
+
+  &.flip-both[data-rotation="90"] {
+    transform: rotate(90deg) scale(-1, -1);
+  }
+  &.flip-both[data-rotation="180"] {
+    transform: rotate(180deg) scale(-1, -1);
+  }
+  &.flip-both[data-rotation="270"] {
+    transform: rotate(270deg) scale(-1, -1);
+  }
+
+  // 旋转状态
+  &[data-rotation="90"] {
+    .resize-handle {
+      &[data-position="top-left"] { cursor: ne-resize; }
+      &[data-position="top-right"] { cursor: se-resize; }
+      &[data-position="bottom-left"] { cursor: nw-resize; }
+      &[data-position="bottom-right"] { cursor: sw-resize; }
+    }
+  }
+
+  &[data-rotation="180"] {
+    .resize-handle {
+      &[data-position="top-left"] { cursor: se-resize; }
+      &[data-position="top-right"] { cursor: sw-resize; }
+      &[data-position="bottom-left"] { cursor: ne-resize; }
+      &[data-position="bottom-right"] { cursor: nw-resize; }
+    }
+  }
+
+  &[data-rotation="270"] {
+    .resize-handle {
+      &[data-position="top-left"] { cursor: sw-resize; }
+      &[data-position="top-right"] { cursor: nw-resize; }
+      &[data-position="bottom-left"] { cursor: se-resize; }
+      &[data-position="bottom-right"] { cursor: ne-resize; }
+    }
+  }
+
+  // 旋转变换
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    transform: none !important; // 移除图片的transform
+  }
 }
 
 // 修改容器选择器为 Blot 专用类名
@@ -66,20 +172,96 @@
   height: auto;
   vertical-align: bottom; // 消除图片底部间隙
 }
-// 句柄
+
+// 修改句柄样式和定位
 .resize-handle {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background-color: #1976d2;
+  width: 12px;
+  height: 12px;
+  background-color: #fff;
+  border: 2px solid #1976d2;
+  border-radius: 50%;
   z-index: 9999;
-  cursor: nwse-resize !important;
-  pointer-events: auto;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
   opacity: 0;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+
+  &[data-position="top-left"] {
+    top: -6px;
+    left: -6px;
+    cursor: nw-resize;
+  }
+  &[data-position="top-right"] {
+    top: -6px;
+    right: -6px;
+    cursor: ne-resize;
+  }
+  &[data-position="bottom-left"] {
+    bottom: -6px;
+    left: -6px;
+    cursor: sw-resize;
+  }
+  &[data-position="bottom-right"] {
+    bottom: -6px;
+    right: -6px;
+    cursor: se-resize;
+  }
 }
-// 悬停时显示句柄（block 的句柄的语法）
-.image-container:hover .resize-handle {
-  opacity: 1;
+
+// 图片工具栏
+.image-toolbar {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 99999;
+
+  button {
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+
+    &:hover {
+      background: #f5f5f5;
+      color: #1976d2;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+// 旋转指示器
+.rotation-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
