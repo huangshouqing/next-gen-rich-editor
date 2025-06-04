@@ -177,6 +177,7 @@ const MENU_ITEMS_DEFAULT = {
         colspan,
         this.quill.root.parentNode
       )
+      this.tableRowTool.syncRowHeightsWithContent()
       this.quill.update(Quill.sources.USER)
       this.tableSelection.setSelection(
         mergedCell.domNode.getBoundingClientRect(),
@@ -194,6 +195,7 @@ const MENU_ITEMS_DEFAULT = {
         this.selectedTds,
         this.quill.root.parentNode
       )
+      this.tableRowTool.syncRowHeightsWithContent()
       this.quill.update(Quill.sources.USER)
       this.tableSelection.clearSelection()
     }
