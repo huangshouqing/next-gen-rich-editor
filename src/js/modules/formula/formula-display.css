@@ -1,0 +1,74 @@
+.formula-wrapper {
+  display: inline-block;
+  padding: 4px 8px;
+  margin: 0 2px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.formula-wrapper:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.formula-wrapper .formula-content {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.formula-wrapper .katex {
+  font-size: 1.1em;
+  line-height: 1.2;
+}
+
+.formula-wrapper .katex-display {
+  margin: 0;
+}
+
+.formula-wrapper .formula-edit-button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  color: #495057;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.formula-wrapper:hover .formula-edit-button {
+  display: flex;
+}
+
+.formula-wrapper .formula-edit-button:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+/* 错误状态 */
+.formula-wrapper.error {
+  background-color: #fff5f5;
+  border-color: #ffa8a8;
+}
+
+.formula-wrapper.error .formula-content {
+  color: #e03131;
+}
+
+.formula-wrapper.error .formula-error-message {
+  color: #e03131;
+  font-size: 12px;
+  margin-top: 4px;
+} 
