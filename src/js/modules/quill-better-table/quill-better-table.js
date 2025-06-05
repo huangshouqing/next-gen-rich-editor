@@ -3,6 +3,8 @@ import TableColumnTool from "./modules/table-column-tool";
 import TableRowTool from "./modules/table-row-tool";
 import TableSelection from "./modules/table-selection";
 import TableOperationMenu from "./modules/table-operation-menu";
+import TablePicker from "./table-picker";
+import { TableToolbarHandler } from "./table-toolbar-handler";
 
 // import table node matchers
 import {
@@ -213,6 +215,9 @@ class BetterTable extends Module {
     quill.clipboard.matchers = quill.clipboard.matchers.filter((matcher) => {
       return matcher[0] !== "tr";
     });
+
+    // 初始化表格工具栏处理器
+    this.tableToolbarHandler = new TableToolbarHandler(quill);
   }
 
   destroy() {
@@ -220,6 +225,7 @@ class BetterTable extends Module {
     this.rowTool && this.rowTool.destroy();
     this.tableSelection && this.tableSelection.destroy();
     this.tableOperationMenu && this.tableOperationMenu.destroy();
+    this.tableToolbarHandler && this.tableToolbarHandler.destroy();
 
     // 移除文本变化监听器
     if (this.textChangeHandler) {
@@ -231,6 +237,8 @@ class BetterTable extends Module {
     this.rowTool = null;
     this.tableSelection = null;
     this.tableOperationMenu = null;
+    this.tableToolbarHandler = null;
+    this.tablePicker = null;
     this.table = null;
   }
 
@@ -298,6 +306,59 @@ class BetterTable extends Module {
     this.tableSelection = null;
     this.tableOperationMenu = null;
     this.table = null;
+  }
+
+  /**
+   * 显示表格选择器弹框
+   * @param {HTMLElement} buttonElement - 触发按钮元素，用于定位弹框位置
+   */
+  showTablePicker(buttonElement) {
+    // 如果已有选择器，先销毁
+    if (this.tablePicker) {
+      this.tablePicker.destroy();
+    }
+
+    // 获取按钮位置信息
+    const buttonRect = buttonElement.getBoundingClientRect();
+    
+    // 创建表格选择器
+    this.tablePicker = new TablePicker({
+      onSelect: (rows, cols) => {
+        this.insertTable(rows, cols);
+        this.tablePicker = null;
+      },
+      onCancel: () => {
+        this.tablePicker = null;
+      }
+    });
+
+    // 显示选择器，定位在按钮下方
+    this.tablePicker.show(document.body, {
+      left: buttonRect.left,
+      top: buttonRect.bottom + 5
+    });
+  }
+
+  /**
+   * 静态方法：处理工具栏表格按钮点击
+   * 这个方法会被 Quill 的工具栏系统调用
+   */
+  static handleTableButtonClick(value) {
+    // 获取当前活动的 Quill 实例
+    const button = document.querySelector('.ql-table');
+    if (!button) return;
+
+    // 查找对应的 Quill 实例
+    let quillContainer = button.closest('.ql-container');
+    if (!quillContainer) return;
+
+    const quill = Quill.find(quillContainer);
+    if (!quill) return;
+
+    const betterTableModule = quill.getModule('better-table');
+    if (betterTableModule) {
+      betterTableModule.showTablePicker(button);
+    }
   }
 }
 

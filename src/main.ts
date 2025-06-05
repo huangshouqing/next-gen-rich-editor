@@ -8,6 +8,7 @@ import FontColorModule from "./js/modules/font-color";
 import BackgroundColorModule from "./js/modules/back-ground-color";
 import HtmlToMarkdown from "./js/modules/tomd";
 import FormulaModule from "./js/modules/formula";
+import TableModule from "./js/modules/table";
 
 export {
   EditorCore,
@@ -18,4 +19,5 @@ export {
   BackgroundColorModule,
   HtmlToMarkdown,
   FormulaModule,
+  TableModule,
 };

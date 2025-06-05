@@ -11,6 +11,12 @@ import "../../css/base.scss";
 import Delta from "quill-delta-es";
 import str from "../examples/sample-content.js";
 
+// 定义 better-table 模块的接口
+interface BetterTableModule {
+  insertTable: (rows: number, cols: number) => void;
+  showTablePicker?: (buttonElement: HTMLElement) => void;
+}
+
 export class EditorCore {
   public quillInstance: QuillModuleImpl | undefined;
   // 选择器
@@ -39,7 +45,7 @@ export class EditorCore {
     ["justifyLeft", "justifyCenter", "justifyRight", "justifyFull"],
     ["insertUnorderedList", "insertOrderedList"],
     ["indent", "outdent"],
-    ["table-pro", "insertTable", "createLink", "insertImage"],
+    ["insertTable", "createLink", "insertImage"],
     ["foreColor", "hiliteColor"],
     ["undo", "redo"],
     ["clear", "insertSample", "toMarkdown", "clearFormat"],
@@ -100,15 +106,6 @@ export class EditorCore {
           case "formula":
             this.moduleInstances["FormulaModule"]?.showDialog?.();
             break;
-          // 表格增强
-          case "table-pro":
-            if (this.quillInstance?.quill?.getModule("table-pro")) {
-              // The module will handle the table insertion UI
-              break;
-            } else {
-              console.warn("TablePro module not found. Please check the configuration.");
-            }
-            break;
           // 字体颜色
           case "foreColor":
             if (this.moduleInstances["FontColorModule"]) {
@@ -146,11 +143,17 @@ export class EditorCore {
             break;
           //  表格
           case "insertTable":
-            (
-              this.quillInstance?.quill?.getModule("better-table") as {
-                insertTable: (rows: number, cols: number) => void;
+            if (this.moduleInstances["TableModule"]) {
+              this.moduleInstances["TableModule"].showTablePicker?.(btn as HTMLElement);
+            } else {
+              // 如果没有 TableModule，直接使用 better-table 模块
+              const betterTableModule = this.quillInstance?.quill?.getModule("better-table") as BetterTableModule;
+              if (betterTableModule && betterTableModule.showTablePicker) {
+                betterTableModule.showTablePicker(btn as HTMLElement);
+              } else if (betterTableModule && betterTableModule.insertTable) {
+                betterTableModule.insertTable(3, 3);
               }
-            )?.insertTable(3, 3);
+            }
             break;
           // 插入图片
           case "insertImage":
@@ -275,8 +278,8 @@ export class EditorCore {
           button.id = "font-size-btn";
         } else if (cmd === "formula") {
           button.id = "formula-btn";
-        } else if(cmd ==='table-pro'){
-          button.id = 'ql-table-pro'
+        } else if (cmd === "table-pro") {
+          button.id = "ql-table-pro";
         }
         button.dataset.cmd = cmd;
         // 直接插入 SVG 字符串
@@ -285,7 +288,7 @@ export class EditorCore {
       });
       toolbar.appendChild(groupDiv);
     });
-    debugger
+    debugger;
     return toolbar;
   }
   /**

@@ -1,27 +1,29 @@
 import Quill from 'quill-next'
 import { css, getRelativeRect } from '../utils'
 
-// svg icons
-import operationIcon1 from '../assets/icons/icon_operation_1.svg'
-import operationIcon2 from '../assets/icons/icon_operation_2.svg'
-import operationIcon3 from '../assets/icons/icon_operation_3.svg'
-import operationIcon4 from '../assets/icons/icon_operation_4.svg'
-import operationIcon5 from '../assets/icons/icon_operation_5.svg'
-import operationIcon6 from '../assets/icons/icon_operation_6.svg'
-import operationIcon7 from '../assets/icons/icon_operation_7.svg'
-import operationIcon8 from '../assets/icons/icon_operation_8.svg'
-import operationIcon9 from '../assets/icons/icon_operation_9.svg'
-
 const MENU_MIN_HEIHGT = 150
 const MENU_WIDTH = 200
 const ERROR_LIMIT = 5
 const DEFAULT_CELL_COLORS = ['white', 'red', 'yellow', 'blue']
 const DEFAULT_COLOR_SUBTITLE = '背景颜色'
 
+// Simple SVG icons
+const ICONS = {
+  insertColumnRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20m-8-8h16"/></svg>',
+  insertColumnLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20m-8-8h16"/></svg>',
+  insertRowUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20m-8-8v16"/></svg>',
+  insertRowDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20m-8-8v16"/></svg>',
+  mergeCells: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3h8v8H8zM8 13h8v8H8z"/></svg>',
+  unmergeCells: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z"/></svg>',
+  deleteColumn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/></svg>',
+  deleteRow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/></svg>',
+  deleteTable: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/></svg>'
+}
+
 const MENU_ITEMS_DEFAULT = {
   insertColumnRight: {
     text: '右侧添加一列',
-    iconSrc: operationIcon1,
+    iconSrc: ICONS.insertColumnRight,
     handler () {
       const tableContainer = Quill.find(this.table)
       let colIndex = getColToolCellIndexByBoundary(
@@ -55,7 +57,7 @@ const MENU_ITEMS_DEFAULT = {
 
   insertColumnLeft: {
     text: '左侧添加一列',
-    iconSrc: operationIcon2,
+    iconSrc: ICONS.insertColumnLeft,
     handler () {
       const tableContainer = Quill.find(this.table)
       let colIndex = getColToolCellIndexByBoundary(
@@ -89,7 +91,7 @@ const MENU_ITEMS_DEFAULT = {
 
   insertRowUp: {
     text: '向上插入一行',
-    iconSrc: operationIcon3,
+    iconSrc: ICONS.insertRowUp,
     handler () {
       const tableContainer = Quill.find(this.table)
       const affectedCells = tableContainer.insertRow(
@@ -113,7 +115,7 @@ const MENU_ITEMS_DEFAULT = {
 
   insertRowDown: {
     text: '向下插入一行',
-    iconSrc: operationIcon4,
+    iconSrc: ICONS.insertRowDown,
     handler () {
       const tableContainer = Quill.find(this.table)
       const affectedCells = tableContainer.insertRow(
@@ -137,7 +139,7 @@ const MENU_ITEMS_DEFAULT = {
 
   mergeCells: {
     text: '合并单元格',
-    iconSrc: operationIcon5,
+    iconSrc: ICONS.mergeCells,
     handler () {
       const tableContainer = Quill.find(this.table)
       // compute merged Cell rowspan, equal to length of selected rows
@@ -188,7 +190,7 @@ const MENU_ITEMS_DEFAULT = {
 
   unmergeCells: {
     text: '取消合并',
-    iconSrc: operationIcon6,
+    iconSrc: ICONS.unmergeCells,
     handler () {
       const tableContainer = Quill.find(this.table)
       tableContainer.unmergeCells(
@@ -203,7 +205,7 @@ const MENU_ITEMS_DEFAULT = {
 
   deleteColumn: {
     text: '删除列',
-    iconSrc: operationIcon7,
+    iconSrc: ICONS.deleteColumn,
     handler () {
       const tableContainer = Quill.find(this.table)
       let colIndexes = getColToolCellIndexesByBoundary(
@@ -231,7 +233,7 @@ const MENU_ITEMS_DEFAULT = {
 
   deleteRow: {
     text: '删除行',
-    iconSrc: operationIcon8,
+    iconSrc: ICONS.deleteRow,
     handler () {
       const tableContainer = Quill.find(this.table)
       tableContainer.deleteRow(
@@ -246,7 +248,7 @@ const MENU_ITEMS_DEFAULT = {
 
   deleteTable: {
     text: '删除表格',
-    iconSrc: operationIcon9,
+    iconSrc: ICONS.deleteTable,
     handler () {
       const betterTableModule = this.quill.getModule('better-table')
       const tableContainer = Quill.find(this.table)
@@ -304,7 +306,8 @@ export default class TableOperationMenu {
       if (this.menuItems[name]) {
         this.domNode.appendChild(
           this.menuItemCreator(
-            Object.assign({}, MENU_ITEMS_DEFAULT[name], this.menuItems[name])
+            Object.assign({}, MENU_ITEMS_DEFAULT[name], this.menuItems[name]),
+            name
           )
         )
 
@@ -374,9 +377,14 @@ export default class TableOperationMenu {
     return node
   }
 
-  menuItemCreator ({ text, iconSrc, handler }) {
+  menuItemCreator ({ text, iconSrc, handler }, actionName) {
     const node = document.createElement('div')
     node.classList.add('qlbt-operation-menu-item')
+    
+    // 添加操作类型标识
+    if (actionName) {
+      node.setAttribute('data-action', actionName)
+    }
 
     const iconSpan = document.createElement('span')
     iconSpan.classList.add('qlbt-operation-menu-icon')

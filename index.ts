@@ -7,7 +7,8 @@ import {
   FontColorModule,
   BackgroundColorModule,
   HtmlToMarkdown,
-  FormulaModule
+  FormulaModule,
+  TableModule
 } from "./src/main";
 new EditorCore("#editor", {
   toolbar: [
@@ -16,7 +17,7 @@ new EditorCore("#editor", {
     ["justifyLeft", "justifyCenter", "justifyRight", "justifyFull"],
     ["insertUnorderedList", "insertOrderedList"],
     ["indent", "outdent"],
-    ["table-pro", "createLink", "insertImage"],
+    ["insertTable", "createLink", "insertImage"],
     ["foreColor", "hiliteColor"],
     ["undo", "redo"],
     ["clear", "insertSample", "toMarkdown", "clearFormat"],
@@ -29,6 +30,7 @@ new EditorCore("#editor", {
     FontColorModule,
     BackgroundColorModule,
     HtmlToMarkdown,
-    FormulaModule
+    FormulaModule,
+    TableModule
   ],
 });
