@@ -261,17 +261,85 @@ export class EditorCore {
   }
   private createToolbar(toolbarConfig: ToolbarConfig): HTMLElement {
     const toolbar = document.createElement("div");
-    toolbar.className = "toolbar";
+    toolbar.className = "toolbar modern-toolbar";
+    
+    // 添加现代化样式
+    toolbar.style.cssText = `
+      user-select: none;
+      pointer-events: auto;
+      padding: 12px 16px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border-radius: 8px 8px 0 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+
     toolbarConfig.forEach((group) => {
       const groupDiv = document.createElement("div");
       groupDiv.className = "toolbar-group";
+      groupDiv.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 8px;
+        border-right: 1px solid #f3f4f6;
+        position: relative;
+      `;
+
       group.forEach((cmd) => {
         if (!commandIconMap[cmd]) {
           console.warn(`未找到 "${cmd}" 的图标`);
           return;
         }
         const button = document.createElement("button");
-        button.className = "btn";
+        button.className = "btn modern-btn";
+        
+        // 添加现代化按钮样式
+        button.style.cssText = `
+          background: transparent;
+          border: none;
+          padding: 8px;
+          cursor: pointer;
+          color: #374151;
+          border-radius: 6px;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          position: relative;
+          outline: none;
+        `;
+
+        // 添加悬停效果
+        button.addEventListener('mouseenter', () => {
+          button.style.background = 'rgba(5, 137, 243, 0.08)';
+          button.style.color = '#0589f3';
+          button.style.transform = 'translateY(-1px)';
+          button.style.boxShadow = '0 2px 8px rgba(5, 137, 243, 0.15)';
+        });
+
+        button.addEventListener('mouseleave', () => {
+          button.style.background = 'transparent';
+          button.style.color = '#374151';
+          button.style.transform = 'translateY(0)';
+          button.style.boxShadow = 'none';
+        });
+
+        button.addEventListener('mousedown', () => {
+          button.style.transform = 'translateY(0) scale(0.95)';
+        });
+
+        button.addEventListener('mouseup', () => {
+          button.style.transform = 'translateY(-1px) scale(1)';
+        });
+
         if (cmd === "insertTable") {
           button.id = "insert-table-btn";
         } else if (cmd === "fontSize") {
@@ -284,11 +352,52 @@ export class EditorCore {
         button.dataset.cmd = cmd;
         // 直接插入 SVG 字符串
         button.innerHTML = commandIconMap[cmd];
+        
+        // 给 SVG 添加样式
+        const svg = button.querySelector('svg');
+        if (svg) {
+          svg.style.cssText = `
+            width: 20px;
+            height: 20px;
+            transition: all 0.2s;
+          `;
+        }
+
         groupDiv.appendChild(button);
       });
+
       toolbar.appendChild(groupDiv);
     });
-    debugger;
+
+    // 最后一个组不显示右边框
+    const groups = toolbar.querySelectorAll('.toolbar-group');
+    if (groups.length > 0) {
+      const lastGroup = groups[groups.length - 1] as HTMLElement;
+      lastGroup.style.borderRight = 'none';
+    }
+
+    // 添加全局样式
+    if (!document.querySelector('#modern-toolbar-styles')) {
+      const style = document.createElement('style');
+      style.id = 'modern-toolbar-styles';
+      style.textContent = `
+        .modern-toolbar .modern-btn:focus {
+          background: rgba(5, 137, 243, 0.1) !important;
+          color: #0589f3 !important;
+          box-shadow: 0 0 0 2px rgba(5, 137, 243, 0.2) !important;
+        }
+        
+        .modern-toolbar .modern-btn:active {
+          background: rgba(5, 137, 243, 0.15) !important;
+        }
+        
+        .modern-toolbar .toolbar-group:last-child {
+          border-right: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     return toolbar;
   }
   /**

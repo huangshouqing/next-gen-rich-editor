@@ -21,9 +21,23 @@ export default class BackgroundColorModule {
     if (this.colorPicker) return;
 
     this.colorPicker = document.createElement("div");
-    this.colorPicker.className = "color-picker";
-    this.colorPicker.style.position = "absolute";
-    this.colorPicker.style.zIndex = "9999";
+    this.colorPicker.className = "modern-color-picker background-color-picker";
+    this.colorPicker.style.cssText = `
+      position: absolute;
+      z-index: 9999;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.08);
+      padding: 16px;
+      backdrop-filter: blur(20px);
+      animation: pickerSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: none;
+    `;
+
+    // 创建颜色网格容器
+    const colorGrid = document.createElement("div");
+    colorGrid.className = "color-grid";
 
     // 复用与字体颜色相同的颜色数组
     const colors = [
@@ -62,13 +76,11 @@ export default class BackgroundColorModule {
         this.editor.execCommand("hiliteColor", color);
         this.hideColorPicker();
       });
-      this.colorPicker?.appendChild(colorBlock);
+      colorGrid.appendChild(colorBlock);
     });
+
+    this.colorPicker.appendChild(colorGrid);
     document.body.appendChild(this.colorPicker);
-    // 添加失焦事件监听
-    this.colorPicker.addEventListener("blur", () => {
-      this.hideColorPicker();
-    });
   }
 
   public showColorPicker(btn: HTMLElement): void {
@@ -77,10 +89,22 @@ export default class BackgroundColorModule {
       return;
     }
     const rect = btn.getBoundingClientRect();
-    this.colorPicker.style.top = `${rect.bottom + window.scrollY}px`;
+    this.colorPicker.style.top = `${rect.bottom + window.scrollY + 5}px`;
     this.colorPicker.style.left = `${rect.left + window.scrollX}px`;
-    this.colorPicker.style.display = "flex";
-    this.colorPicker.style.flexWrap = "wrap";
+    this.colorPicker.style.display = "block";
+
+    // 添加失焦关闭功能
+    const closeHandler = (e: MouseEvent) => {
+      if (!this.colorPicker?.contains(e.target as Node) && e.target !== btn) {
+        this.hideColorPicker();
+        document.removeEventListener('mousedown', closeHandler);
+      }
+    };
+    
+    // 延迟添加事件监听器，避免立即触发
+    setTimeout(() => {
+      document.addEventListener('mousedown', closeHandler);
+    }, 0);
   }
 
   public hideColorPicker(): void {
