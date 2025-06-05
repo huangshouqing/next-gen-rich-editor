@@ -41,6 +41,72 @@
   /* background: #ddd; */
 }
 
+/* 工具栏按钮激活状态 */
+.toolbar button.btn.active {
+  background: rgba(5, 137, 243, 0.1) !important;
+  color: #0589f3 !important;
+  box-shadow: 0 0 0 2px rgba(5, 137, 243, 0.2) !important;
+}
+
+/* 字体大小显示指示器 */
+.toolbar button.btn .size-display {
+  position: absolute !important;
+  bottom: -2px !important;
+  right: -2px !important;
+  background: #0589f3 !important;
+  color: white !important;
+  font-size: 10px !important;
+  padding: 1px 3px !important;
+  border-radius: 2px !important;
+  line-height: 1 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+/* 颜色显示指示器 */
+.toolbar button.btn .color-display {
+  position: absolute !important;
+  bottom: 2px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 16px !important;
+  height: 3px !important;
+  border-radius: 1px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+/* 缩进级别显示指示器 */
+.toolbar button.btn .indent-display {
+  position: absolute !important;
+  top: -2px !important;
+  right: -2px !important;
+  background: #0589f3 !important;
+  color: white !important;
+  font-size: 10px !important;
+  padding: 1px 3px !important;
+  border-radius: 2px !important;
+  line-height: 1 !important;
+  min-width: 12px !important;
+  text-align: center !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+/* 工具栏按钮相对定位，以便指示器正确显示 */
+.toolbar button.btn {
+  position: relative;
+}
+
+/* 禁用状态的按钮样式 */
+.toolbar button.btn[disabled],
+.toolbar button.btn:disabled {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+
 .editor-content {
   /* min-height: 100px; */
   /* padding: 20px; */
@@ -98,5 +164,19 @@
     display: block;
     margin: 8px 0;
     text-align: center;
+  }
+}
+
+/* 响应式设计 - 移动端优化 */
+@media (max-width: 768px) {
+  .toolbar button.btn .size-display,
+  .toolbar button.btn .indent-display {
+    font-size: 9px !important;
+    padding: 1px 2px !important;
+  }
+  
+  .toolbar button.btn .color-display {
+    width: 12px !important;
+    height: 2px !important;
   }
 }

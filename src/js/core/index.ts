@@ -89,6 +89,8 @@ export class EditorCore {
     this.toobarChangeHandler();
     this.selectionChangeHandler();
     this.contentChangeHandler();
+    // 添加工具栏状态更新
+    this.bindToolbarStateUpdate();
   }
   /**
    * 绑定工具栏事件
@@ -604,6 +606,298 @@ export class EditorCore {
     // 执行原有命令逻辑
     if (this.quillInstance) {
       this.quillInstance.execCommand(command, value);
+    }
+  }
+
+  /**
+   * 绑定工具栏状态更新
+   */
+  private bindToolbarStateUpdate(): void {
+    if (!this.quillInstance) return;
+    
+    // 监听选区变化，更新工具栏状态
+    this.quillInstance.quill.on('selection-change', (range) => {
+      if (range) {
+        this.updateToolbarState(range);
+      }
+    });
+
+    // 监听文本变化，也需要更新工具栏状态
+    this.quillInstance.quill.on('text-change', () => {
+      const range = this.quillInstance?.quill.getSelection();
+      if (range) {
+        // 延迟更新，确保格式已应用
+        setTimeout(() => {
+          this.updateToolbarState(range);
+        }, 10);
+      }
+    });
+  }
+
+  /**
+   * 更新工具栏按钮状态
+   */
+  private updateToolbarState(range: { index: number; length: number }): void {
+    if (!this.quillInstance || !this.container) return;
+
+    // 获取当前选区的格式
+    const formats = this.quillInstance.quill.getFormat(range.index, range.length);
+    
+    // 更新基础格式按钮状态
+    this.updateFormatButtonState('bold', Boolean(formats.bold));
+    this.updateFormatButtonState('italic', Boolean(formats.italic));
+    this.updateFormatButtonState('underline', Boolean(formats.underline));
+    this.updateFormatButtonState('strikeThrough', Boolean(formats.strike));
+    
+    // 更新对齐按钮状态
+    this.updateAlignButtonState(String(formats.align || ''));
+    
+    // 更新列表按钮状态
+    this.updateListButtonState(String(formats.list || ''));
+    
+    // 更新字体大小状态
+    this.updateFontSizeState(String(formats.size || ''));
+    
+    // 更新颜色状态
+    this.updateColorState('foreColor', String(formats.color || ''));
+    this.updateColorState('hiliteColor', String(formats.background || ''));
+    
+    // 更新缩进按钮状态（根据当前缩进级别）
+    this.updateIndentButtonState(Number(formats.indent || 0));
+  }
+
+  /**
+   * 更新格式按钮状态
+   */
+  private updateFormatButtonState(command: string, isActive: boolean): void {
+    const button = this.container?.querySelector(`[data-cmd="${command}"]`) as HTMLElement;
+    if (button) {
+      if (isActive) {
+        button.classList.add('active');
+        button.style.background = 'rgba(5, 137, 243, 0.1)';
+        button.style.color = '#0589f3';
+        button.style.boxShadow = '0 0 0 2px rgba(5, 137, 243, 0.2)';
+      } else {
+        button.classList.remove('active');
+        button.style.background = 'transparent';
+        button.style.color = '#374151';
+        button.style.boxShadow = 'none';
+      }
+    }
+  }
+
+  /**
+   * 更新对齐按钮状态
+   */
+  private updateAlignButtonState(align: string): void {
+    // 清除所有对齐按钮的激活状态
+    ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'].forEach(cmd => {
+      const button = this.container?.querySelector(`[data-cmd="${cmd}"]`) as HTMLElement;
+      if (button) {
+        button.classList.remove('active');
+        button.style.background = 'transparent';
+        button.style.color = '#374151';
+        button.style.boxShadow = 'none';
+      }
+    });
+
+    // 激活当前对齐方式按钮
+    let activeAlign = 'justifyLeft'; // 默认左对齐
+    switch (align) {
+      case 'center':
+        activeAlign = 'justifyCenter';
+        break;
+      case 'right':
+        activeAlign = 'justifyRight';
+        break;
+      case 'justify':
+        activeAlign = 'justifyFull';
+        break;
+    }
+
+    const activeButton = this.container?.querySelector(`[data-cmd="${activeAlign}"]`) as HTMLElement;
+    if (activeButton) {
+      activeButton.classList.add('active');
+      activeButton.style.background = 'rgba(5, 137, 243, 0.1)';
+      activeButton.style.color = '#0589f3';
+      activeButton.style.boxShadow = '0 0 0 2px rgba(5, 137, 243, 0.2)';
+    }
+  }
+
+  /**
+   * 更新列表按钮状态
+   */
+  private updateListButtonState(list: string): void {
+    // 清除所有列表按钮的激活状态
+    ['insertUnorderedList', 'insertOrderedList'].forEach(cmd => {
+      const button = this.container?.querySelector(`[data-cmd="${cmd}"]`) as HTMLElement;
+      if (button) {
+        button.classList.remove('active');
+        button.style.background = 'transparent';
+        button.style.color = '#374151';
+        button.style.boxShadow = 'none';
+      }
+    });
+
+    // 激活当前列表类型按钮
+    if (list) {
+      const activeCmd = list === 'bullet' ? 'insertUnorderedList' : 'insertOrderedList';
+      const activeButton = this.container?.querySelector(`[data-cmd="${activeCmd}"]`) as HTMLElement;
+      if (activeButton) {
+        activeButton.classList.add('active');
+        activeButton.style.background = 'rgba(5, 137, 243, 0.1)';
+        activeButton.style.color = '#0589f3';
+        activeButton.style.boxShadow = '0 0 0 2px rgba(5, 137, 243, 0.2)';
+      }
+    }
+  }
+
+  /**
+   * 更新字体大小状态
+   */
+  private updateFontSizeState(size: string): void {
+    const button = this.container?.querySelector(`[data-cmd="fontSize"]`) as HTMLElement;
+    if (button) {
+      if (size) {
+        // 显示当前字体大小
+        const sizeDisplay = button.querySelector('.size-display') || document.createElement('span');
+        sizeDisplay.className = 'size-display';
+        sizeDisplay.textContent = size + 'px';
+        (sizeDisplay as HTMLElement).style.cssText = `
+          position: absolute;
+          bottom: -2px;
+          right: -2px;
+          background: #0589f3;
+          color: white;
+          font-size: 10px;
+          padding: 1px 3px;
+          border-radius: 2px;
+          line-height: 1;
+        `;
+        
+        if (!button.querySelector('.size-display')) {
+          button.appendChild(sizeDisplay);
+          button.style.position = 'relative';
+        }
+        
+        button.classList.add('active');
+        button.style.background = 'rgba(5, 137, 243, 0.1)';
+        button.style.color = '#0589f3';
+        button.style.boxShadow = '0 0 0 2px rgba(5, 137, 243, 0.2)';
+      } else {
+        // 移除字体大小显示
+        const sizeDisplay = button.querySelector('.size-display');
+        if (sizeDisplay) {
+          sizeDisplay.remove();
+        }
+        
+        button.classList.remove('active');
+        button.style.background = 'transparent';
+        button.style.color = '#374151';
+        button.style.boxShadow = 'none';
+      }
+    }
+  }
+
+  /**
+   * 更新颜色状态
+   */
+  private updateColorState(command: string, color: string): void {
+    const button = this.container?.querySelector(`[data-cmd="${command}"]`) as HTMLElement;
+    if (button) {
+      if (color) {
+        // 显示当前颜色
+        const colorDisplay = button.querySelector('.color-display') || document.createElement('div');
+        colorDisplay.className = 'color-display';
+        (colorDisplay as HTMLElement).style.cssText = `
+          position: absolute;
+          bottom: 2px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 16px;
+          height: 3px;
+          background-color: ${color};
+          border-radius: 1px;
+          border: 1px solid rgba(0, 0, 0, 0.1);
+        `;
+        
+        if (!button.querySelector('.color-display')) {
+          button.appendChild(colorDisplay);
+          button.style.position = 'relative';
+        }
+        
+        button.classList.add('active');
+        button.style.background = 'rgba(5, 137, 243, 0.1)';
+        button.style.color = '#0589f3';
+        button.style.boxShadow = '0 0 0 2px rgba(5, 137, 243, 0.2)';
+      } else {
+        // 移除颜色显示
+        const colorDisplay = button.querySelector('.color-display');
+        if (colorDisplay) {
+          colorDisplay.remove();
+        }
+        
+        button.classList.remove('active');
+        button.style.background = 'transparent';
+        button.style.color = '#374151';
+        button.style.boxShadow = 'none';
+      }
+    }
+  }
+
+  /**
+   * 更新缩进按钮状态
+   */
+  private updateIndentButtonState(indent: number): void {
+    const indentButton = this.container?.querySelector(`[data-cmd="indent"]`) as HTMLElement;
+    const outdentButton = this.container?.querySelector(`[data-cmd="outdent"]`) as HTMLElement;
+    
+    // 根据缩进级别显示状态
+    if (indent > 0) {
+      // 显示当前缩进级别
+      if (indentButton) {
+        const indentDisplay = indentButton.querySelector('.indent-display') || document.createElement('span');
+        indentDisplay.className = 'indent-display';
+        indentDisplay.textContent = indent.toString();
+        (indentDisplay as HTMLElement).style.cssText = `
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          background: #0589f3;
+          color: white;
+          font-size: 10px;
+          padding: 1px 3px;
+          border-radius: 2px;
+          line-height: 1;
+          min-width: 12px;
+          text-align: center;
+        `;
+        
+        if (!indentButton.querySelector('.indent-display')) {
+          indentButton.appendChild(indentDisplay);
+          indentButton.style.position = 'relative';
+        }
+      }
+      
+      // 启用减少缩进按钮
+      if (outdentButton) {
+        outdentButton.style.opacity = '1';
+        outdentButton.style.pointerEvents = 'auto';
+      }
+    } else {
+      // 移除缩进显示
+      if (indentButton) {
+        const indentDisplay = indentButton.querySelector('.indent-display');
+        if (indentDisplay) {
+          indentDisplay.remove();
+        }
+      }
+      
+      // 禁用减少缩进按钮
+      if (outdentButton) {
+        outdentButton.style.opacity = '0.5';
+        outdentButton.style.pointerEvents = 'none';
+      }
     }
   }
 }
