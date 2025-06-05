@@ -5,6 +5,8 @@ import QuillBetterTable from "../modules/quill-better-table/quill-better-table.j
 import { TableProTool, TableProBlot, TableRowBlot, TableCellBlot } from "../modules/table-pro/main";
 // 使用 Quill 官方 CSS
 import "quill-next/dist/quill.bubble.css";
+// 引入现代化 bubble 主题覆盖样式
+import "../../css/quill-bubble-modern.css";
 // 引入字体大小 css
 import "../../css/quill-styles.css";
 // quill-better-table  css
@@ -71,14 +73,13 @@ export class QuillModuleImpl {
       modules: {
         toolbar: {
           container: [
-            ["bold", "italic", "underline", "strikeThrough"],
+            ["bold", "italic", "underline"],
             ["blockquote", "code-block"],
             [{ header: "1" }, { header: "2" }],
-            [{ list: "ordered" }, { list: "bullet" }],
+            // [{ list: "ordered" }, { list: "bullet" }],
             [{ script: "sub" }, { script: "super" }],
-            [{ indent: "-1" }, { indent: "+1" }],
+            // [{ indent: "-1" }, { indent: "+1" }],
             [{ direction: "rtl" }],
-            ["table"],
           ]
         },
         "better-table": {
